@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * Updated: focus ring color matches the brand red (#C0392B) instead of blue.
+ * Strength meter colors (red/orange/yellow/green) are intentionally left alone —
+ * that's a semantic weak→strong gradient, not a brand surface.
+ */
+
 import React, { useState, forwardRef } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineLock } from "react-icons/ai";
 
@@ -44,7 +50,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             type={visible ? "text" : "password"}
             className={`w-full pl-10 pr-11 py-2.5 text-sm text-gray-900 border rounded-lg outline-none transition-all duration-150
               placeholder:text-gray-400 bg-white
-              focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+              focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
               ${error ? "border-red-400 bg-red-50 focus:ring-red-500/20 focus:border-red-400" : "border-gray-200 hover:border-gray-300"}
               ${className}`}
             {...props}

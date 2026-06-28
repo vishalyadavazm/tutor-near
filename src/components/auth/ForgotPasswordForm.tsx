@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * Updated to match the homepage palette:
+ *   Navy: #15213D   Red: #C0392B   Peach: #FBE7E0
+ * Step-progress "done" and final success states keep semantic green —
+ * that signals completion, not brand, same logic used elsewhere in the app.
+ */
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +20,9 @@ import {
   resetPasswordSchema,
   ResetPasswordData,
 } from "@/lib/validations";
+
+const NAVY = "#15213D";
+const RED = "#C0392B";
 
 type Step = "email" | "otp" | "reset" | "success";
 const OTP_RESEND_SECONDS = 60;
@@ -89,7 +99,7 @@ export default function ForgotPasswordForm() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Reset password</h2>
+        <h2 className="text-2xl font-bold tracking-tight" style={{ color: NAVY }}>Reset password</h2>
         <p className="text-gray-500 text-sm mt-1">We&apos;ll get you back in 3 quick steps</p>
       </div>
 
@@ -102,15 +112,21 @@ export default function ForgotPasswordForm() {
             return (
               <React.Fragment key={label}>
                 <div className="flex flex-col items-center gap-1">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
-                    ${done ? "bg-green-500 text-white" : active ? "bg-blue-600 text-white ring-4 ring-blue-100" : "bg-gray-100 text-gray-400"}`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
+                      ${done ? "bg-green-500 text-white" : active ? "text-white" : "bg-gray-100 text-gray-400"}`}
+                    style={active ? { background: RED, boxShadow: `0 0 0 4px ${RED}1A` } : undefined}
+                  >
                     {done ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     ) : i + 1}
                   </div>
-                  <span className={`text-xs font-medium whitespace-nowrap ${active ? "text-blue-600" : done ? "text-green-600" : "text-gray-400"}`}>
+                  <span
+                    className={`text-xs font-medium whitespace-nowrap ${done ? "text-green-600" : "text-gray-400"}`}
+                    style={active ? { color: RED } : undefined}
+                  >
                     {label}
                   </span>
                 </div>
@@ -139,7 +155,7 @@ export default function ForgotPasswordForm() {
                 autoComplete="email"
                 {...regEmail("email")}
                 className={`w-full pl-10 pr-4 py-2.5 text-sm text-gray-900 border rounded-lg outline-none transition-all duration-150
-                  placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                  placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
                   ${emailErrors.email ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
               />
             </div>
@@ -156,9 +172,10 @@ export default function ForgotPasswordForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-1 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl
+            className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-              flex items-center justify-center gap-2"
+              flex items-center justify-center gap-2 hover:opacity-90"
+            style={{ background: RED }}
           >
             {isLoading ? (
               <>
@@ -175,7 +192,7 @@ export default function ForgotPasswordForm() {
 
           <p className="text-center text-sm text-gray-500">
             Remembered it?{" "}
-            <Link href="/login" className="font-semibold text-blue-600 hover:underline">Back to login</Link>
+            <Link href="/login" className="font-semibold hover:underline" style={{ color: RED }}>Back to login</Link>
           </p>
         </form>
       )}
@@ -183,9 +200,9 @@ export default function ForgotPasswordForm() {
       {/* ── Step 2: OTP ── */}
       {step === "otp" && (
         <div className="flex flex-col gap-5">
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+          <div className="rounded-xl p-4 text-center" style={{ background: "#FBE7E0" }}>
             <p className="text-sm text-gray-600">OTP sent to</p>
-            <p className="text-sm font-bold text-blue-700 mt-0.5">{sentEmail}</p>
+            <p className="text-sm font-bold mt-0.5" style={{ color: RED }}>{sentEmail}</p>
           </div>
 
           <div className="flex flex-col items-center gap-4">
@@ -195,9 +212,9 @@ export default function ForgotPasswordForm() {
 
           <div className="flex items-center justify-center text-sm">
             {timer > 0 ? (
-              <p className="text-gray-500">Resend in <span className="font-semibold text-blue-600 tabular-nums">{timer}s</span></p>
+              <p className="text-gray-500">Resend in <span className="font-semibold tabular-nums" style={{ color: RED }}>{timer}s</span></p>
             ) : (
-              <button type="button" onClick={resendOTP} disabled={isLoading} className="text-blue-600 font-semibold hover:underline disabled:opacity-50">
+              <button type="button" onClick={resendOTP} disabled={isLoading} className="font-semibold hover:underline disabled:opacity-50" style={{ color: RED }}>
                 {isLoading ? "Sending…" : "Resend OTP"}
               </button>
             )}
@@ -207,9 +224,10 @@ export default function ForgotPasswordForm() {
             type="button"
             onClick={verifyOTP}
             disabled={isLoading || otp.length < 6}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl
+            className="w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-              flex items-center justify-center gap-2"
+              flex items-center justify-center gap-2 hover:opacity-90"
+            style={{ background: RED }}
           >
             {isLoading ? (
               <>
@@ -247,9 +265,10 @@ export default function ForgotPasswordForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-1 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl
+            className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-              flex items-center justify-center gap-2"
+              flex items-center justify-center gap-2 hover:opacity-90"
+            style={{ background: RED }}
           >
             {isLoading ? (
               <>
@@ -273,15 +292,16 @@ export default function ForgotPasswordForm() {
             <AiOutlineCheckCircle className="w-10 h-10 text-green-500" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Password reset!</h3>
+            <h3 className="text-lg font-bold" style={{ color: NAVY }}>Password reset!</h3>
             <p className="text-sm text-gray-500 mt-1 max-w-xs">
               Your password has been updated. You can now sign in with your new password.
             </p>
           </div>
           <Link
             href="/login"
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl
-              transition-all duration-200 text-center block"
+            className="w-full py-3 text-white text-sm font-semibold rounded-xl
+              transition-all duration-200 text-center block hover:opacity-90"
+            style={{ background: RED }}
           >
             Back to Login
           </Link>

@@ -16,7 +16,8 @@ export const otpVerifySchema = z.object({
 
 export const studentRegisterSchema = z
   .object({
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
     email: z.string().min(1, "Email is required").email("Enter a valid email"),
     phone: z
       .string()
@@ -37,7 +38,8 @@ export const studentRegisterSchema = z
 
 export const teacherRegisterSchema = z
   .object({
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
     email: z.string().min(1, "Email is required").email("Enter a valid email"),
     phone: z
       .string()
