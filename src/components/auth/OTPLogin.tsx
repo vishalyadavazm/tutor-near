@@ -5,8 +5,9 @@
  *   Navy: #15213D   Red: #C0392B   Peach: #FBE7E0
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import AuthService from "@/services/auth.service";
+import { redirectByRole } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -118,7 +119,7 @@ export default function OTPLogin() {
         localStorage.setItem("authToken", token);
       }
 
-      router.push("/dashboard");
+      redirectByRole(router);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setOtpError(

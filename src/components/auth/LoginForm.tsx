@@ -15,7 +15,8 @@ import { AiOutlineMail } from "react-icons/ai";
 import PasswordInput from "./PasswordInput";
 import OTPLogin from "./OTPLogin";
 import { loginSchema, LoginFormData } from "@/lib/validations";
-import AuthService from "@/services/auth.service";
+import AuthService, { extractRole } from "@/services/auth.service";
+import { saveRole, redirectByRole } from "@/utils/auth";
 
 const NAVY = "#15213D";
 const RED = "#C0392B";
@@ -38,8 +39,10 @@ export default function LoginForm() {
     setSubmitError("");
 
     try {
-      await AuthService.login(data);
-      router.push("/dashboard");
+      const res = await AuthService.login(data);
+      const roleFromApi = extractRole(res);
+      if (roleFromApi) saveRole(roleFromApi);
+      redirectByRole(router);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Login failed.");
     } finally {

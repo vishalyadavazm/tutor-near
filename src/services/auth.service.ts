@@ -22,9 +22,28 @@ export interface LoginResponse {
   token?: string;
   access?: string;
   auth_token?: string;
+  role?: string;
+  profile_type?: string;
+  user_type?: string;
   data?: {
     token?: string;
+    role?: string;
+    profile_type?: string;
+    user_type?: string;
   };
+}
+
+export function extractRole(data: LoginResponse): string | null {
+  const raw =
+    data.role ||
+    data.profile_type ||
+    data.user_type ||
+    data.data?.role ||
+    data.data?.profile_type ||
+    data.data?.user_type ||
+    null;
+  if (!raw) return null;
+  return raw.toLowerCase().includes("teacher") ? "teacher" : "student";
 }
 
 class AuthService {
@@ -113,8 +132,8 @@ class AuthService {
   logout() {
     removeToken();
 
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
+    if (globalThis.window !== undefined) {
+      globalThis.window.location.href = "/login";
     }
   }
   sendEmailOTP(email: string) {
