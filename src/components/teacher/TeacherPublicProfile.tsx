@@ -24,6 +24,7 @@ import {
 } from "react-icons/bs";
 import { FiBookOpen } from "react-icons/fi";
 import AuthService from "@/services/auth.service";
+import ContactModal from "@/components/shared/ContactModal";
 
 /* ── Brand ──────────────────────────────────────── */
 const NAVY = "#15213D";
@@ -339,6 +340,13 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const [photoTab, setPhotoTab] = useState<"photos" | "videos">("photos");
   const [searchText, setSearchText] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
+  const [contactType, setContactType] = useState<"inquiry" | "demo" | "message">("inquiry");
+  const [showContact, setShowContact] = useState(false);
+
+  function openContact(type: "inquiry" | "demo" | "message") {
+    setContactType(type);
+    setShowContact(true);
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -549,7 +557,10 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     >
                       {followed ? "Following ✓" : "Follow"}
                     </button>
-                    <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
+                    <button
+                      onClick={() => openContact("message")}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+                    >
                       <AiOutlineMessage className="w-4 h-4" />
                       Message
                     </button>
@@ -652,12 +663,16 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                       <div className="text-base font-bold text-orange-600 mt-0.5">₹{teacher.rate}/hr</div>
                       <div className="flex gap-2 mt-2">
                         <button
+                          onClick={() => openContact("inquiry")}
                           className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
                           style={{ background: ORANGE }}
                         >
                           Send Inquiry
                         </button>
-                        <button className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all">
+                        <button
+                          onClick={() => openContact("demo")}
+                          className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all"
+                        >
                           Book Demo
                         </button>
                       </div>
@@ -841,10 +856,14 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
 
       {/* Floating CTA (mobile) */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-3 xl:hidden z-40">
-        <button className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700">
+        <button
+          onClick={() => openContact("message")}
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700"
+        >
           Message
         </button>
         <button
+          onClick={() => openContact("inquiry")}
           className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{ background: ORANGE }}
         >
@@ -852,6 +871,15 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
         </button>
       </div>
       <div className="h-16 xl:hidden" />
+
+      {/* Contact modal */}
+      {showContact && (
+        <ContactModal
+          teacher={teacher}
+          defaultType={contactType}
+          onClose={() => setShowContact(false)}
+        />
+      )}
     </div>
   );
 }

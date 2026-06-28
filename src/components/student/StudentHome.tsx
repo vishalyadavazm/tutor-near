@@ -21,6 +21,7 @@ import {
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { MdOutlineVideoCall, MdOutlineLocationOn } from "react-icons/md";
 import AuthService from "@/services/auth.service";
+import ContactModal from "@/components/shared/ContactModal";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -278,10 +279,12 @@ function TeacherCard({
   t,
   saved,
   onSave,
+  onContact,
 }: {
   t: (typeof TEACHERS)[0];
   saved: boolean;
   onSave: () => void;
+  onContact: () => void;
 }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-md transition-all duration-200">
@@ -385,6 +388,7 @@ function TeacherCard({
                 View Profile
               </Link>
               <button
+                onClick={onContact}
                 className="px-4 py-1.5 text-sm font-semibold rounded-xl text-white transition-all hover:opacity-90"
                 style={{ background: ORANGE }}
               >
@@ -410,6 +414,7 @@ export default function StudentHome() {
   const [sortBy, setSortBy] = useState("relevant");
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [contactTeacher, setContactTeacher] = useState<(typeof TEACHERS)[0] | null>(null);
 
   function toggleSubject(s: string) {
     setSubjectFilters((prev) =>
@@ -630,6 +635,8 @@ export default function StudentHome() {
     </div>
   );
 
+  const ct = contactTeacher;
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
 
@@ -814,6 +821,7 @@ export default function StudentHome() {
                 t={t}
                 saved={savedIds.has(t.id)}
                 onSave={() => toggleSave(t.id)}
+                onContact={() => setContactTeacher(t)}
               />
             ))
           )}
@@ -826,6 +834,27 @@ export default function StudentHome() {
           )}
         </div>
       </div>
+
+      {ct && (
+        <ContactModal
+          teacher={{
+            id: ct.id,
+            initials: ct.initials,
+            name: ct.name,
+            subjects: ct.subjects,
+            rating: ct.rating,
+            reviews: ct.reviews,
+            rate: ct.rate,
+            verified: ct.verified,
+            bg: ct.bg,
+            color: ct.color,
+            mode: ct.mode,
+            tagline: `${ct.subjects.join(", ")} · ${ct.city}`,
+          }}
+          defaultType="inquiry"
+          onClose={() => setContactTeacher(null)}
+        />
+      )}
     </div>
   );
 }
