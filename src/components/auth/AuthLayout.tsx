@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Updated to match the homepage palette:
- *   Navy: #15213D   Red: #C0392B   Peach: #FBE7E0   Gold: #F2B705   Muted label: #9FA9C4
- */
 
 import React from "react";
 import Link from "next/link";
