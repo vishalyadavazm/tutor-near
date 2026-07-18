@@ -18,7 +18,6 @@ import axios from "axios";
 
 const NAVY = "#15213D";
 const RED = "#C0392B";
-//test
 const OTP_RESEND_SECONDS = 60;
 
 export default function OTPLogin() {
