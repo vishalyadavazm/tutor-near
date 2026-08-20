@@ -8,4 +8,11 @@ export const API = {
   VERIFY_RESET_PASSWORD: "/auth/verifyresetpassword/",
   EMAIL_SEND_OTP: "/auth/emailsendotp/",
   VERIFY_EMAIL_OTP: "/auth/verifyemailotp/",
+  MENTOR_PROFILE: "/mentor/profile",
+  MENTOR_ALL_PROFILES: "/mentor/all",
+  MENTOR_LIKE: "/mentor/likes",
+  MENTOR_RATING: "/mentor/rating",
+  COMMON_QUALIFICATION: "/common/qualification",
+  COMMON_DOCUMENT_NAME: "/common/documentname",
+  COMMON_COURSES: "/common/courses",
 };

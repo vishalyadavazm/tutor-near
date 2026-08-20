@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AiOutlineDashboard,
@@ -18,7 +18,6 @@ import {
 } from "react-icons/ai";
 import {
   BsStarFill,
-  BsStar,
   BsCurrencyRupee,
   BsShieldCheck,
   BsLightbulb,
@@ -26,6 +25,8 @@ import {
 import { FiUsers, FiTrendingUp, FiChevronRight, FiZap } from "react-icons/fi";
 import { MdOutlineVideoCall } from "react-icons/md";
 import AuthService from "@/services/auth.service";
+import mentorService, { MentorProfileRecord } from "@/services/mentor.service";
+import { getInitials } from "@/utils/teacherDisplay";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -34,22 +35,35 @@ const ORANGE_BORDER = "#F8C9A8";
 const NAVY_BG = "#EEF0F6";
 const MUTED = "#9FA9C4";
 
+/* ─── Profile completion ──────────────────────────────── */
+
+interface ProfileChecklistItem {
+  label: string;
+  done: boolean;
+  tip: string;
+}
+
+function computeProfileCompletion(p: MentorProfileRecord | null): {
+  items: ProfileChecklistItem[];
+  pct: number;
+} {
+  const items: ProfileChecklistItem[] = [
+    { label: "Profile photo", done: !!p?.profile_pic, tip: "Teachers with photos get 3× more inquiries" },
+    { label: "Gender & date of birth", done: !!p?.gender && !!p?.date_of_birth, tip: "Required for your profile" },
+    { label: "About & teaching style", done: !!p?.about?.trim(), tip: "Write a short bio about your teaching approach" },
+    { label: "Expertise", done: !!p?.expertise?.trim(), tip: "A short label for what you're known for" },
+    { label: "Courses you teach", done: (p?.courses_can_teach.length ?? 0) > 0, tip: "Add the courses you can teach" },
+    { label: "Years of experience", done: p != null && p.total_expierence_in_years !== null, tip: "Mention your experience to build trust" },
+    { label: "Highest qualification", done: (p?.highest_qualification.length ?? 0) > 0, tip: "Add your education credentials" },
+    { label: "Temporary & permanent address", done: !!p?.temp_address?.trim() && !!p?.permanent_address?.trim(), tip: "Required for your profile" },
+    { label: "City, state & country", done: !!p?.city?.trim() && !!p?.state?.trim() && !!p?.country?.trim(), tip: "Help nearby students find you" },
+  ];
+  const doneCount = items.filter((i) => i.done).length;
+  const pct = Math.round((doneCount / items.length) * 100);
+  return { items, pct };
+}
+
 /* ─── Static data ──────────────────────────────────── */
-
-const PROFILE_ITEMS = [
-  { id: "email", label: "Email verified", done: true, tip: "" },
-  { id: "subjects", label: "Teaching subjects added", done: true, tip: "" },
-  { id: "photo", label: "Profile photo", done: false, tip: "Teachers with photos get 3× more inquiries" },
-  { id: "bio", label: "About & teaching style", done: false, tip: "Write a short bio about your teaching approach" },
-  { id: "rate", label: "Hourly rate set", done: false, tip: "Students filter by budget — set your rate now" },
-  { id: "exp", label: "Years of experience", done: false, tip: "Mention your experience to build trust" },
-  { id: "qual", label: "Qualifications / degree", done: false, tip: "Add your education credentials" },
-  { id: "city", label: "City & location", done: false, tip: "Help nearby students find you" },
-];
-
-const COMPLETION_PCT = Math.round(
-  (PROFILE_ITEMS.filter((i) => i.done).length / PROFILE_ITEMS.length) * 100,
-);
 
 const STATS = [
   {
@@ -215,20 +229,6 @@ const NAV_ITEMS = [
 
 /* ─── Sub-components ──────────────────────────────── */
 
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) =>
-        i <= Math.floor(rating) ? (
-          <BsStarFill key={i} className="w-2.5 h-2.5 text-amber-400" />
-        ) : (
-          <BsStar key={i} className="w-2.5 h-2.5 text-gray-200" />
-        ),
-      )}
-    </span>
-  );
-}
-
 function CircleProgress({ pct }: { pct: number }) {
   const r = 40;
   const circ = 2 * Math.PI * r;
@@ -331,6 +331,35 @@ export default function TeacherDashboard() {
   const [profileExpanded, setProfileExpanded] = useState(true);
   const [inquiryFilter, setInquiryFilter] = useState<"all" | "new" | "responded">("all");
   const [respondedIds, setRespondedIds] = useState<Set<number>>(new Set());
+  const [myProfile, setMyProfile] = useState<MentorProfileRecord | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const profiles = await mentorService.getProfiles();
+        if (!cancelled) setMyProfile(profiles[0] ?? null);
+      } catch {
+        if (!cancelled) setMyProfile(null);
+      } finally {
+        if (!cancelled) setProfileLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const { items: profileItems, pct: completionPct } = useMemo(
+    () => computeProfileCompletion(myProfile),
+    [myProfile],
+  );
+  const displayName = myProfile?.user?.name || "Teacher";
+  const displayInitials = myProfile ? getInitials(displayName) : "T";
+  const isVerified = !!myProfile?.identity_verification_name;
 
   const activeInquiries =
     inquiryFilter === "new"
@@ -411,10 +440,10 @@ export default function TeacherDashboard() {
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                 style={{ background: NAVY }}
               >
-                TP
+                {displayInitials}
               </div>
               <div className="hidden lg:block leading-tight">
-                <div className="text-xs font-semibold text-gray-800">Teacher</div>
+                <div className="text-xs font-semibold text-gray-800 truncate max-w-[140px]">{displayName}</div>
                 <div className="text-[10px]" style={{ color: MUTED }}>View profile</div>
               </div>
             </Link>
@@ -441,16 +470,18 @@ export default function TeacherDashboard() {
               className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white mx-auto mb-2"
               style={{ background: NAVY }}
             >
-              TP
+              {displayInitials}
             </div>
-            <div className="text-sm font-semibold text-gray-900">Teacher</div>
-            <div className="flex items-center justify-center gap-1 mt-1">
-              <Stars rating={4.7} />
-              <span className="text-xs text-gray-400">4.7</span>
-            </div>
+            <div className="text-sm font-semibold text-gray-900 truncate">{displayName}</div>
             <div className="mt-2 flex items-center justify-center gap-1">
-              <BsShieldCheck className="w-3 h-3 text-green-500" />
-              <span className="text-xs text-green-600 font-medium">Verified</span>
+              {isVerified ? (
+                <>
+                  <BsShieldCheck className="w-3 h-3 text-green-500" />
+                  <span className="text-xs text-green-600 font-medium">Verified</span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">Not verified</span>
+              )}
             </div>
 
             {/* Profile strength mini-bar */}
@@ -458,13 +489,13 @@ export default function TeacherDashboard() {
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] text-gray-500">Profile strength</span>
                 <span className="text-[10px] font-semibold" style={{ color: ORANGE }}>
-                  {COMPLETION_PCT}%
+                  {completionPct}%
                 </span>
               </div>
               <div className="w-full h-1.5 bg-gray-100 rounded-full">
                 <div
                   className="h-1.5 rounded-full transition-all"
-                  style={{ width: `${COMPLETION_PCT}%`, background: ORANGE }}
+                  style={{ width: `${completionPct}%`, background: ORANGE }}
                 />
               </div>
             </div>
@@ -517,16 +548,24 @@ export default function TeacherDashboard() {
           </div>
 
           {/* ── Profile Completion Section ── */}
-          {!bannerDismissed && (
+          {!bannerDismissed && !profileLoading && (
             <div
               className="rounded-2xl border overflow-hidden"
               style={{ borderColor: ORANGE_BORDER }}
             >
               {/* Header row */}
-              <button
-                className="w-full flex items-center justify-between px-5 py-4"
+              <div
+                role="button"
+                tabIndex={0}
+                className="w-full flex items-center justify-between px-5 py-4 cursor-pointer"
                 style={{ background: ORANGE_BG }}
                 onClick={() => setProfileExpanded((p) => !p)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setProfileExpanded((p) => !p);
+                  }
+                }}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -537,7 +576,7 @@ export default function TeacherDashboard() {
                   </div>
                   <div className="text-left">
                     <div className="text-sm font-semibold" style={{ color: NAVY }}>
-                      Complete your profile — {COMPLETION_PCT}% done
+                      {myProfile ? `Complete your profile — ${completionPct}% done` : "Create your teacher profile"}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
                       Teachers with complete profiles get <span className="font-medium" style={{ color: ORANGE }}>5× more student inquiries</span>
@@ -548,11 +587,11 @@ export default function TeacherDashboard() {
                   <div className="w-24 h-2 bg-orange-100 rounded-full hidden sm:block">
                     <div
                       className="h-2 rounded-full"
-                      style={{ width: `${COMPLETION_PCT}%`, background: ORANGE }}
+                      style={{ width: `${completionPct}%`, background: ORANGE }}
                     />
                   </div>
                   <span className="text-xs font-semibold" style={{ color: ORANGE }}>
-                    {COMPLETION_PCT}%
+                    {completionPct}%
                   </span>
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-600 p-1 rounded"
@@ -564,15 +603,15 @@ export default function TeacherDashboard() {
                     <AiOutlineClose className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </button>
+              </div>
 
               {/* Checklist */}
               {profileExpanded && (
                 <div className="bg-white px-5 py-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
-                    {PROFILE_ITEMS.map((item) => (
+                    {profileItems.map((item) => (
                       <div
-                        key={item.id}
+                        key={item.label}
                         className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
                           item.done
                             ? "bg-green-50 border-green-100"
@@ -733,23 +772,27 @@ export default function TeacherDashboard() {
             {/* Circular progress */}
             <div className="flex flex-col items-center mb-4">
               <div className="relative">
-                <CircleProgress pct={COMPLETION_PCT} />
+                <CircleProgress pct={completionPct} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-xl font-bold" style={{ color: NAVY }}>
-                    {COMPLETION_PCT}%
+                    {completionPct}%
                   </span>
                   <span className="text-[10px] text-gray-400">complete</span>
                 </div>
               </div>
               <div className="text-xs text-center text-gray-500 mt-2">
-                Add <span className="font-semibold text-gray-700">{PROFILE_ITEMS.filter((i) => !i.done).length} more sections</span> to reach 100%
+                {completionPct === 100 ? (
+                  "Your profile is complete! 🎉"
+                ) : (
+                  <>Add <span className="font-semibold text-gray-700">{profileItems.filter((i) => !i.done).length} more sections</span> to reach 100%</>
+                )}
               </div>
             </div>
 
             {/* Checklist */}
             <div className="flex flex-col gap-1.5">
-              {PROFILE_ITEMS.map((item) => (
-                <div key={item.id} className="flex items-center gap-2.5">
+              {profileItems.map((item) => (
+                <div key={item.label} className="flex items-center gap-2.5">
                   {item.done ? (
                     <AiOutlineCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                   ) : (
