@@ -436,12 +436,20 @@ export default function TeacherDashboard() {
 
             {/* Avatar */}
             <Link href="/profile" className="flex items-center gap-2 pl-2 border-l border-gray-100">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{ background: NAVY }}
-              >
-                {displayInitials}
-              </div>
+              {myProfile?.profile_pic ? (
+                <img
+                  src={myProfile.profile_pic}
+                  alt={displayName}
+                  className="w-8 h-8 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  style={{ background: NAVY }}
+                >
+                  {displayInitials}
+                </div>
+              )}
               <div className="hidden lg:block leading-tight">
                 <div className="text-xs font-semibold text-gray-800 truncate max-w-[140px]">{displayName}</div>
                 <div className="text-[10px]" style={{ color: MUTED }}>View profile</div>
@@ -466,12 +474,20 @@ export default function TeacherDashboard() {
 
           {/* Profile mini-card */}
           <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-3 text-center">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white mx-auto mb-2"
-              style={{ background: NAVY }}
-            >
-              {displayInitials}
-            </div>
+            {myProfile?.profile_pic ? (
+              <img
+                src={myProfile.profile_pic}
+                alt={displayName}
+                className="w-14 h-14 rounded-full object-cover mx-auto mb-2"
+              />
+            ) : (
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white mx-auto mb-2"
+                style={{ background: NAVY }}
+              >
+                {displayInitials}
+              </div>
+            )}
             <div className="text-sm font-semibold text-gray-900 truncate">{displayName}</div>
             <div className="mt-2 flex items-center justify-center gap-1">
               {isVerified ? (
