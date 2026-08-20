@@ -1,186 +1,31 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   AiOutlineSearch,
   AiOutlineEnvironment,
   AiOutlineBell,
-  AiOutlineCheckCircle,
   AiOutlineClose,
   AiOutlineFilter,
 } from "react-icons/ai";
 import {
-  BsStarFill,
-  BsStar,
   BsHeart,
   BsHeartFill,
   BsShieldCheck,
   BsFunnel,
+  BsStarFill,
+  BsStar,
 } from "react-icons/bs";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-import { MdOutlineVideoCall, MdOutlineLocationOn } from "react-icons/md";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
+import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
+import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
-const ORANGE_BG = "#FFF3EC";
-const ORANGE_BORDER = "#F8C9A8";
 
-/* ─── Mock teachers ─────────────────────────────── */
-const TEACHERS = [
-  {
-    id: 1, initials: "PS", name: "Priya Sharma",
-    subjects: ["Mathematics", "Physics"],
-    levels: ["Class 11–12", "JEE Mains", "JEE Advanced"],
-    expYears: 8, experience: "8 years",
-    mode: "Both", city: "Varanasi", area: "Lanka",
-    rate: 600, rating: 4.9, reviews: 84, verified: true, available: true,
-    bio: "Dedicated mathematics and physics teacher with 8+ years helping students crack JEE. My approach focuses on conceptual clarity and systematic problem-solving shortcuts tailored to each student's learning style.",
-    languages: ["Hindi", "English"],
-    tags: ["JEE Advanced", "Calculus", "Mechanics", "Algebra"],
-    bg: "#DBEAFE", color: "#1D4ED8", active: 1,
-  },
-  {
-    id: 2, initials: "RK", name: "Rahul Kumar",
-    subjects: ["Physics", "Chemistry"],
-    levels: ["Class 11–12", "JEE Mains", "NEET"],
-    expYears: 5, experience: "5 years",
-    mode: "Both", city: "Varanasi", area: "Sigra",
-    rate: 500, rating: 4.6, reviews: 61, verified: true, available: true,
-    bio: "Physics and Chemistry expert with 5 years coaching JEE and NEET aspirants. Known for making complex concepts simple through real-world analogies and lots of practice problems.",
-    languages: ["Hindi", "English"],
-    tags: ["NEET", "JEE Mains", "Organic Chemistry", "Electrostatics"],
-    bg: "#D1FAE5", color: "#065F46", active: 2,
-  },
-  {
-    id: 3, initials: "AM", name: "Anjali Mishra",
-    subjects: ["English"],
-    levels: ["Class 9–10", "Class 11–12", "IELTS / TOEFL"],
-    expYears: 10, experience: "10 years",
-    mode: "Online", city: "Online", area: "",
-    rate: 750, rating: 5.0, reviews: 102, verified: true, available: false,
-    bio: "English communication and grammar specialist with 10 years of experience. Expert in IELTS preparation, creative writing, and board exam scoring. Helped 500+ students improve their English fluency.",
-    languages: ["English", "Hindi"],
-    tags: ["IELTS", "Grammar", "Writing", "Board Exams"],
-    bg: "#FAE8FF", color: "#86198F", active: 5,
-  },
-  {
-    id: 4, initials: "VS", name: "Vikram Singh",
-    subjects: ["Chemistry"],
-    levels: ["Class 11–12", "JEE Advanced", "NEET"],
-    expYears: 6, experience: "6 years",
-    mode: "Offline", city: "Varanasi", area: "Assi",
-    rate: 550, rating: 4.7, reviews: 48, verified: true, available: true,
-    bio: "Chemistry teacher specialising in Organic Chemistry and Physical Chemistry for JEE Advanced and NEET. My mnemonic-based teaching makes difficult reactions easy to remember and apply.",
-    languages: ["Hindi"],
-    tags: ["Organic Chemistry", "JEE Advanced", "NEET", "Reaction Mechanisms"],
-    bg: "#FEF9C3", color: "#92400E", active: 3,
-  },
-  {
-    id: 5, initials: "NV", name: "Neha Verma",
-    subjects: ["Biology"],
-    levels: ["Class 9–10", "Class 11–12", "NEET"],
-    expYears: 4, experience: "4 years",
-    mode: "Both", city: "Varanasi", area: "Orderly Bazar",
-    rate: 450, rating: 4.5, reviews: 29, verified: false, available: true,
-    bio: "Biology teacher with 4 years of experience and a special focus on NEET preparation. Strong command over Botany and Zoology with diagram-based teaching that simplifies complex biological processes.",
-    languages: ["Hindi", "English"],
-    tags: ["NEET", "Botany", "Zoology", "Class 12"],
-    bg: "#ECFDF5", color: "#047857", active: 7,
-  },
-  {
-    id: 6, initials: "AJ", name: "Amit Joshi",
-    subjects: ["Computer Science"],
-    levels: ["Class 11–12", "Beginner", "Intermediate", "Advanced"],
-    expYears: 7, experience: "7 years",
-    mode: "Online", city: "Online", area: "",
-    rate: 800, rating: 4.8, reviews: 67, verified: true, available: true,
-    bio: "Software engineer turned educator with 7 years teaching Computer Science. Covers Python, C++, Data Structures, CBSE CS, and competitive programming. Practical, project-based learning approach.",
-    languages: ["Hindi", "English"],
-    tags: ["Python", "C++", "Data Structures", "CBSE CS"],
-    bg: "#E0F2FE", color: "#0369A1", active: 1,
-  },
-  {
-    id: 7, initials: "SY", name: "Sunita Yadav",
-    subjects: ["Mathematics", "Physics"],
-    levels: ["Class 6–8", "Class 9–10", "Class 11–12", "JEE Mains"],
-    expYears: 12, experience: "12 years",
-    mode: "Both", city: "Varanasi", area: "Bhelupur",
-    rate: 700, rating: 4.9, reviews: 118, verified: true, available: true,
-    bio: "Veteran Maths and Physics teacher with 12 years of classroom and home-tutoring experience. Expert at building strong fundamentals from Class 6 to JEE Mains level. Ranked among top-rated tutors in Varanasi.",
-    languages: ["Hindi", "English"],
-    tags: ["Trigonometry", "Mechanics", "JEE Mains", "CBSE"],
-    bg: "#F3E8FF", color: "#7E22CE", active: 0,
-  },
-  {
-    id: 8, initials: "DG", name: "Deepak Gupta",
-    subjects: ["History", "Geography"],
-    levels: ["Class 6–8", "Class 9–10", "Class 11–12"],
-    expYears: 9, experience: "9 years",
-    mode: "Offline", city: "Varanasi", area: "Mahmoorganj",
-    rate: 400, rating: 4.4, reviews: 35, verified: false, available: false,
-    bio: "Experienced History and Geography teacher with 9 years of preparing students for CBSE and State Board exams. Uses maps, timelines, and storytelling to make social sciences interesting and memorable.",
-    languages: ["Hindi"],
-    tags: ["CBSE", "Board Exams", "Map Work", "Modern History"],
-    bg: "#FEF3C7", color: "#B45309", active: 14,
-  },
-  {
-    id: 9, initials: "KP", name: "Kavita Pandey",
-    subjects: ["English", "Hindi"],
-    levels: ["Class 6–8", "Class 9–10", "Class 11–12"],
-    expYears: 6, experience: "6 years",
-    mode: "Both", city: "Lucknow", area: "Hazratganj",
-    rate: 500, rating: 4.6, reviews: 52, verified: true, available: true,
-    bio: "Bilingual English and Hindi teacher from Lucknow with 6 years of experience in language teaching, grammar, and literature. Specialises in essay writing, comprehension, and board exam preparation.",
-    languages: ["Hindi", "English", "Urdu"],
-    tags: ["Grammar", "Literature", "Board Exams", "Essay Writing"],
-    bg: "#FCE7F3", color: "#9D174D", active: 4,
-  },
-  {
-    id: 10, initials: "RS", name: "Ranjit Singh",
-    subjects: ["Mathematics"],
-    levels: ["Class 1–5", "Class 6–8", "Class 9–10"],
-    expYears: 3, experience: "3 years",
-    mode: "Offline", city: "Varanasi", area: "Sarnath",
-    rate: 350, rating: 4.2, reviews: 18, verified: false, available: true,
-    bio: "Young and enthusiastic maths teacher with 3 years experience working with students from Class 1 to 10. Passionate about making maths fun through games, puzzles, and real-life examples.",
-    languages: ["Hindi"],
-    tags: ["Basic Maths", "Class 9-10", "Mensuration", "Algebra"],
-    bg: "#DBEAFE", color: "#1E40AF", active: 2,
-  },
-  {
-    id: 11, initials: "MD", name: "Meera Dubey",
-    subjects: ["Music"],
-    levels: ["Beginner", "Intermediate", "Advanced"],
-    expYears: 8, experience: "8 years",
-    mode: "Online", city: "Online", area: "",
-    rate: 600, rating: 4.7, reviews: 43, verified: true, available: true,
-    bio: "Classical and contemporary music teacher with 8 years of experience. Teaches Hindustani vocal, keyboard, and guitar. Formal training from Banaras Hindu University. Students of all age groups welcome.",
-    languages: ["Hindi", "English"],
-    tags: ["Hindustani Vocal", "Guitar", "Keyboard", "BHU Trained"],
-    bg: "#FDE68A", color: "#92400E", active: 6,
-  },
-  {
-    id: 12, initials: "AT", name: "Arun Tiwari",
-    subjects: ["Economics", "Accountancy"],
-    levels: ["Class 11–12", "Beginner"],
-    expYears: 5, experience: "5 years",
-    mode: "Both", city: "Varanasi", area: "Nadesar",
-    rate: 450, rating: 4.5, reviews: 31, verified: true, available: false,
-    bio: "Commerce stream specialist with 5 years teaching Economics and Accountancy for Class 11-12 and CA Foundation. Strong focus on conceptual understanding and scoring in board exams.",
-    languages: ["Hindi", "English"],
-    tags: ["Micro Economics", "Accountancy", "CA Foundation", "Board Exams"],
-    bg: "#D1FAE5", color: "#065F46", active: 9,
-  },
-];
-
-const SUBJECT_OPTIONS = [
-  "Mathematics", "Physics", "Chemistry", "Biology", "English", "Hindi",
-  "History", "Geography", "Computer Science", "Economics", "Accountancy", "Music",
-];
-const CITY_OPTIONS = ["Varanasi", "Lucknow", "Online"];
 const EXP_BUCKETS = [
   { label: "0–2 years", min: 0, max: 2 },
   { label: "3–5 years", min: 3, max: 5 },
@@ -190,37 +35,11 @@ const EXP_BUCKETS = [
 
 /* ─── Sub-components ────────────────────────────── */
 
-function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "xs" }) {
-  const cls = size === "xs" ? "w-2.5 h-2.5" : "w-3.5 h-3.5";
+function ModeBadge({ verified }: { verified: boolean }) {
+  if (!verified) return null;
   return (
-    <span className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) =>
-        i <= Math.floor(rating) ? (
-          <BsStarFill key={i} className={`${cls} text-amber-400`} />
-        ) : (
-          <BsStar key={i} className={`${cls} text-gray-200`} />
-        ),
-      )}
-    </span>
-  );
-}
-
-function ModeBadge({ mode }: { mode: string }) {
-  if (mode === "Online")
-    return (
-      <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
-        <MdOutlineVideoCall className="w-3.5 h-3.5" /> Online
-      </span>
-    );
-  if (mode === "Offline")
-    return (
-      <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-        <MdOutlineLocationOn className="w-3.5 h-3.5" /> Offline
-      </span>
-    );
-  return (
-    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
-      Online + Offline
+    <span className="flex items-center gap-1 text-xs font-medium text-green-700">
+      <BsShieldCheck className="w-3.5 h-3.5 text-green-500" /> Verified
     </span>
   );
 }
@@ -259,7 +78,10 @@ function CheckboxFilter({
   onChange: () => void;
 }) {
   return (
-    <label className="flex items-center gap-2.5 cursor-pointer py-1 group">
+    <label
+      className="flex items-center gap-2.5 cursor-pointer py-1 group"
+      onClick={onChange}
+    >
       <div
         className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all"
         style={checked ? { background: ORANGE, borderColor: ORANGE } : { borderColor: "#D1D5DB" }}
@@ -275,126 +97,126 @@ function CheckboxFilter({
   );
 }
 
+function StarRating({ rating, reviewCount }: { rating: number | null; reviewCount: number }) {
+  if (rating === null) {
+    return <span className="text-xs text-gray-400">No reviews yet</span>;
+  }
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((i) =>
+        i <= Math.round(rating) ? (
+          <BsStarFill key={i} className="w-3 h-3 text-amber-400" />
+        ) : (
+          <BsStar key={i} className="w-3 h-3 text-gray-200" />
+        ),
+      )}
+      <span className="text-xs font-semibold text-gray-700 ml-0.5">{rating.toFixed(1)}</span>
+      <span className="text-xs text-gray-400">({reviewCount})</span>
+    </div>
+  );
+}
+
 function TeacherCard({
   t,
-  saved,
-  onSave,
+  liking,
+  onToggleLike,
   onContact,
 }: {
-  t: (typeof TEACHERS)[0];
-  saved: boolean;
-  onSave: () => void;
+  t: DisplayTeacher;
+  liking: boolean;
+  onToggleLike: () => void;
   onContact: () => void;
 }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-4">
         {/* Avatar */}
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0"
-          style={{ background: t.bg, color: t.color }}
-        >
-          {t.initials}
-        </div>
+        {t.photoUrl ? (
+          <img
+            src={t.photoUrl}
+            alt={t.name}
+            className="w-14 h-14 rounded-2xl object-cover shrink-0"
+          />
+        ) : (
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0"
+            style={{ background: t.bg, color: t.color }}
+          >
+            {t.initials}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          {/* Row 1: Name + save + price */}
+          {/* Row 1: Name + save */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-semibold text-gray-900">{t.name}</h3>
-                {t.verified && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-green-700">
-                    <BsShieldCheck className="w-3.5 h-3.5 text-green-500" /> Verified
-                  </span>
-                )}
-                {t.available && (
-                  <span
-                    className="text-xs font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: ORANGE_BG, color: ORANGE }}
-                  >
-                    Available now
-                  </span>
-                )}
+                <ModeBadge verified={t.verified} />
               </div>
               <div className="text-sm text-gray-500 mt-0.5 truncate">
-                {t.subjects.join(" · ")} &nbsp;·&nbsp; {t.experience} exp
+                {t.expertise || "Tutor"} &nbsp;·&nbsp; {formatExperience(t.experienceYears)}
               </div>
             </div>
 
-            <div className="flex items-start gap-2 shrink-0">
-              <button
-                onClick={onSave}
-                className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 transition-all"
-              >
-                {saved ? (
-                  <BsHeartFill className="w-4 h-4 text-red-500" />
-                ) : (
-                  <BsHeart className="w-4 h-4" />
-                )}
-              </button>
-              <div className="text-right">
-                <div className="text-lg font-bold" style={{ color: ORANGE }}>
-                  ₹{t.rate}/hr
-                </div>
-                <div className="text-xs text-gray-400">per session</div>
-              </div>
-            </div>
+            <button
+              onClick={onToggleLike}
+              disabled={liking}
+              className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 transition-all shrink-0 disabled:opacity-50"
+            >
+              {t.isLiked ? (
+                <BsHeartFill className="w-4 h-4 text-red-500" />
+              ) : (
+                <BsHeart className="w-4 h-4" />
+              )}
+            </button>
           </div>
 
-          {/* Row 2: Rating + location + mode */}
+          {/* Row 2: Rating + location */}
           <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
-            <div className="flex items-center gap-1.5">
-              <Stars rating={t.rating} />
-              <span className="text-sm font-semibold text-gray-800">{t.rating}</span>
-              <span className="text-xs text-gray-400">({t.reviews} reviews)</span>
-            </div>
+            <StarRating rating={t.rating} reviewCount={t.reviewCount} />
             <span className="text-gray-200 hidden sm:block">|</span>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <AiOutlineEnvironment className="w-3.5 h-3.5" />
-              {t.mode === "Online" ? "Online only" : `${t.city}${t.area ? ` · ${t.area}` : ""}`}
+              {[t.city, t.state, t.country].filter(Boolean).join(", ") || "Location not specified"}
             </div>
-            <span className="text-gray-200 hidden sm:block">|</span>
-            <ModeBadge mode={t.mode} />
           </div>
 
-          {/* Row 3: Bio */}
-          <p className="text-sm text-gray-500 mt-2.5 line-clamp-2 leading-relaxed">{t.bio}</p>
+          {/* Row 3: About */}
+          {t.about && (
+            <p className="text-sm text-gray-500 mt-2.5 line-clamp-2 leading-relaxed">{t.about}</p>
+          )}
 
-          {/* Row 4: Tags */}
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {t.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full border border-gray-100"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          {/* Row 4: Courses */}
+          {t.courses.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {t.courses.map((c) => (
+                <span
+                  key={c}
+                  className="text-xs bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full border border-gray-100"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
 
-          {/* Row 5: Languages + activity + CTAs */}
-          <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-gray-100 flex-wrap gap-2">
-            <div className="flex items-center gap-3 text-xs text-gray-400">
-              <span>🗣 {t.languages.join(", ")}</span>
-              <span>· Active {t.active === 0 ? "today" : `${t.active}d ago`}</span>
-            </div>
-            <div className="flex gap-2">
-              <Link
-                href={`/teacher/${t.id}`}
-                className="px-4 py-1.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
-              >
-                View Profile
-              </Link>
-              <button
-                onClick={onContact}
-                className="px-4 py-1.5 text-sm font-semibold rounded-xl text-white transition-all hover:opacity-90"
-                style={{ background: ORANGE }}
-              >
-                Contact
-              </button>
-            </div>
+          {/* Row 5: CTAs */}
+          <div className="flex items-center justify-end mt-3.5 pt-3.5 border-t border-gray-100 gap-2">
+            <Link
+              href={`/teacher/${t.id}`}
+              className="px-4 py-1.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+            >
+              View Profile
+            </Link>
+            <button
+              onClick={onContact}
+              className="px-4 py-1.5 text-sm font-semibold rounded-xl text-white transition-all hover:opacity-90"
+              style={{ background: ORANGE }}
+            >
+              Contact
+            </button>
           </div>
         </div>
       </div>
@@ -404,97 +226,124 @@ function TeacherCard({
 
 /* ─── Main component ─────────────────────────────── */
 export default function StudentHome() {
+  const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [searchText, setSearchText] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
-  const [subjectFilters, setSubjectFilters] = useState<string[]>([]);
-  const [modeFilters, setModeFilters] = useState<string[]>([]);
+  const [courseFilters, setCourseFilters] = useState<string[]>([]);
   const [expBucket, setExpBucket] = useState("");
-  const [maxRate, setMaxRate] = useState(2000);
-  const [minRating, setMinRating] = useState(0);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState("relevant");
-  const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+  const [likingId, setLikingId] = useState<number | null>(null);
+  const [likeError, setLikeError] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [contactTeacher, setContactTeacher] = useState<(typeof TEACHERS)[0] | null>(null);
+  const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
 
-  function toggleSubject(s: string) {
-    setSubjectFilters((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [profilesRes, coursesRes] = await Promise.all([
+          mentorService.getAllProfiles(),
+          mentorService.getCourses(),
+        ]);
+        if (cancelled) return;
+        setProfiles(profilesRes);
+        setCourses(coursesRes);
+      } catch {
+        if (!cancelled) setLoadError("Couldn't load tutors. Please refresh the page.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const teachers = useMemo(
+    () => profiles.map(toDisplayTeacherFromDirectory).filter((t): t is DisplayTeacher => t !== null),
+    [profiles],
+  );
+
+  const cityOptions = useMemo(
+    () => Array.from(new Set(teachers.map((t) => t.city).filter(Boolean))).sort(),
+    [teachers],
+  );
+
+  function toggleCourse(c: string) {
+    setCourseFilters((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
     );
   }
-  function toggleMode(m: string) {
-    setModeFilters((prev) =>
-      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m],
-    );
-  }
-  function toggleSave(id: number) {
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  async function handleToggleLike(id: number) {
+    setLikingId(id);
+    setLikeError(null);
+    try {
+      await mentorService.toggleLike(id);
+      const refreshed = await mentorService.getAllProfiles();
+      setProfiles(refreshed);
+    } catch {
+      setLikeError("Couldn't update like. Please try again.");
+    } finally {
+      setLikingId(null);
+    }
   }
   function clearFilters() {
-    setSubjectFilters([]);
-    setModeFilters([]);
+    setCourseFilters([]);
     setExpBucket("");
-    setMaxRate(2000);
-    setMinRating(0);
     setCityFilter("all");
+    setVerifiedOnly(false);
   }
 
   const activeFilterCount =
-    subjectFilters.length +
-    modeFilters.length +
+    courseFilters.length +
     (expBucket ? 1 : 0) +
-    (maxRate < 2000 ? 1 : 0) +
-    (minRating > 0 ? 1 : 0) +
-    (cityFilter !== "all" ? 1 : 0);
+    (cityFilter !== "all" ? 1 : 0) +
+    (verifiedOnly ? 1 : 0);
 
   const results = useMemo(() => {
     const bucket = EXP_BUCKETS.find((b) => b.label === expBucket);
-    let list = TEACHERS.filter((t) => {
+    let list = teachers.filter((t) => {
       if (
         searchText &&
         !t.name.toLowerCase().includes(searchText.toLowerCase()) &&
-        !t.subjects.some((s) => s.toLowerCase().includes(searchText.toLowerCase())) &&
-        !t.tags.some((g) => g.toLowerCase().includes(searchText.toLowerCase()))
+        !t.expertise.toLowerCase().includes(searchText.toLowerCase()) &&
+        !t.about.toLowerCase().includes(searchText.toLowerCase()) &&
+        !t.courses.some((c) => c.toLowerCase().includes(searchText.toLowerCase()))
       )
         return false;
-      if (cityFilter !== "all") {
-        if (cityFilter === "Online" && t.mode === "Offline") return false;
-        if (cityFilter !== "Online" && t.city !== cityFilter && t.mode !== "Online") return false;
+      if (cityFilter !== "all" && t.city !== cityFilter) return false;
+      if (courseFilters.length > 0 && !t.courses.some((c) => courseFilters.includes(c)))
+        return false;
+      if (bucket) {
+        const years = t.experienceYears ?? -1;
+        if (years < bucket.min || years > bucket.max) return false;
       }
-      if (subjectFilters.length > 0 && !t.subjects.some((s) => subjectFilters.includes(s)))
-        return false;
-      if (
-        modeFilters.length > 0 &&
-        !modeFilters.some((m) => t.mode === m || t.mode === "Both")
-      )
-        return false;
-      if (bucket && (t.expYears < bucket.min || t.expYears > bucket.max)) return false;
-      if (t.rate > maxRate) return false;
-      if (t.rating < minRating) return false;
+      if (verifiedOnly && !t.verified) return false;
       return true;
     });
 
     switch (sortBy) {
       case "rating":
-        list = [...list].sort((a, b) => b.rating - a.rating);
-        break;
-      case "price_asc":
-        list = [...list].sort((a, b) => a.rate - b.rate);
-        break;
-      case "price_desc":
-        list = [...list].sort((a, b) => b.rate - a.rate);
+        list = [...list].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
         break;
       case "exp":
-        list = [...list].sort((a, b) => b.expYears - a.expYears);
+        list = [...list].sort((a, b) => (b.experienceYears ?? 0) - (a.experienceYears ?? 0));
+        break;
+      case "name":
+        list = [...list].sort((a, b) => a.name.localeCompare(b.name));
         break;
       default:
         break;
     }
     return list;
-  }, [searchText, cityFilter, subjectFilters, modeFilters, expBucket, maxRate, minRating, sortBy]);
+  }, [teachers, searchText, cityFilter, courseFilters, expBucket, verifiedOnly, sortBy]);
 
   const filterPanel = (
     <div className="flex flex-col">
@@ -523,39 +372,46 @@ export default function StudentHome() {
         )}
       </div>
 
-      {/* Subject */}
-      <FilterSection title="Subject">
+      {/* Course */}
+      <FilterSection title="Courses">
         <div className="flex flex-col">
-          {SUBJECT_OPTIONS.map((s) => (
+          {courses.length === 0 && (
+            <p className="text-xs text-gray-400">No courses available</p>
+          )}
+          {courses.map((c) => (
             <CheckboxFilter
-              key={s}
-              label={s}
-              checked={subjectFilters.includes(s)}
-              onChange={() => toggleSubject(s)}
+              key={c.id}
+              label={c.name}
+              checked={courseFilters.includes(c.name)}
+              onChange={() => toggleCourse(c.name)}
             />
           ))}
         </div>
       </FilterSection>
 
-      {/* Teaching mode */}
-      <FilterSection title="Teaching Mode">
-        <div className="flex flex-col">
-          {["Online", "Offline", "Both"].map((m) => (
-            <CheckboxFilter
-              key={m}
-              label={m === "Both" ? "Online + Offline" : m}
-              checked={modeFilters.includes(m)}
-              onChange={() => toggleMode(m)}
-            />
+      {/* City */}
+      <FilterSection title="City">
+        <select
+          value={cityFilter}
+          onChange={(e) => setCityFilter(e.target.value)}
+          className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none bg-white"
+        >
+          <option value="all">All cities</option>
+          {cityOptions.map((c) => (
+            <option key={c} value={c}>{c}</option>
           ))}
-        </div>
+        </select>
       </FilterSection>
 
       {/* Experience */}
       <FilterSection title="Experience">
         <div className="flex flex-col gap-1">
           {EXP_BUCKETS.map((b) => (
-            <label key={b.label} className="flex items-center gap-2.5 cursor-pointer py-1">
+            <label
+              key={b.label}
+              className="flex items-center gap-2.5 cursor-pointer py-1"
+              onClick={() => setExpBucket(expBucket === b.label ? "" : b.label)}
+            >
               <div
                 className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
                 style={
@@ -583,54 +439,13 @@ export default function StudentHome() {
         </div>
       </FilterSection>
 
-      {/* Hourly rate */}
-      <FilterSection title="Hourly Rate (₹)">
-        <div>
-          <input
-            type="range"
-            min={200}
-            max={2000}
-            step={50}
-            value={maxRate}
-            onChange={(e) => setMaxRate(Number(e.target.value))}
-            className="w-full accent-orange-500"
-            style={{ accentColor: ORANGE }}
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>₹200</span>
-            <span className="font-semibold" style={{ color: ORANGE }}>
-              Up to ₹{maxRate}
-            </span>
-            <span>₹2000</span>
-          </div>
-        </div>
-      </FilterSection>
-
-      {/* Rating */}
-      <FilterSection title="Minimum Rating">
-        <div className="flex flex-col gap-1">
-          {[
-            { label: "4★ & above", val: 4 },
-            { label: "3★ & above", val: 3 },
-            { label: "Any rating", val: 0 },
-          ].map((r) => (
-            <label key={r.label} className="flex items-center gap-2.5 cursor-pointer py-1">
-              <div
-                className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                style={
-                  minRating === r.val
-                    ? { borderColor: ORANGE }
-                    : { borderColor: "#D1D5DB" }
-                }
-              >
-                {minRating === r.val && (
-                  <div className="w-2 h-2 rounded-full" style={{ background: ORANGE }} />
-                )}
-              </div>
-              <span className="text-sm text-gray-600">{r.label}</span>
-            </label>
-          ))}
-        </div>
+      {/* Verified */}
+      <FilterSection title="Verification" defaultOpen={false}>
+        <CheckboxFilter
+          label="Verified tutors only"
+          checked={verifiedOnly}
+          onChange={() => setVerifiedOnly((v) => !v)}
+        />
       </FilterSection>
     </div>
   );
@@ -665,7 +480,7 @@ export default function StudentHome() {
               type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search by subject, teacher name, or skill…"
+              placeholder="Search by name, expertise, or course…"
               className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full"
             />
             {searchText && (
@@ -684,7 +499,7 @@ export default function StudentHome() {
               className="bg-transparent outline-none cursor-pointer"
             >
               <option value="all">All cities</option>
-              {CITY_OPTIONS.map((c) => (
+              {cityOptions.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -722,7 +537,7 @@ export default function StudentHome() {
               <p className="text-sm text-gray-500 mt-0.5">
                 {results.length} teachers available
                 {cityFilter !== "all" ? ` in ${cityFilter}` : ""}
-                {subjectFilters.length > 0 ? ` · ${subjectFilters.join(", ")}` : ""}
+                {courseFilters.length > 0 ? ` · ${courseFilters.join(", ")}` : ""}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -753,9 +568,8 @@ export default function StudentHome() {
                 >
                   <option value="relevant">Most Relevant</option>
                   <option value="rating">Highest Rated</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
                   <option value="exp">Most Experienced</option>
+                  <option value="name">Name (A–Z)</option>
                 </select>
               </div>
             </div>
@@ -799,7 +613,20 @@ export default function StudentHome() {
 
         {/* ── Teacher listing ── */}
         <div className="flex-1 min-w-0 flex flex-col gap-3">
-          {results.length === 0 ? (
+          {likeError && (
+            <div className="px-4 py-2.5 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
+              {likeError}
+            </div>
+          )}
+          {loading ? (
+            <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center text-sm text-gray-400">
+              Loading tutors…
+            </div>
+          ) : loadError ? (
+            <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center text-sm text-red-500">
+              {loadError}
+            </div>
+          ) : results.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center">
               <div className="text-4xl mb-3">🔍</div>
               <div className="text-base font-semibold text-gray-700 mb-1">No tutors found</div>
@@ -819,17 +646,17 @@ export default function StudentHome() {
               <TeacherCard
                 key={t.id}
                 t={t}
-                saved={savedIds.has(t.id)}
-                onSave={() => toggleSave(t.id)}
+                liking={likingId === t.id}
+                onToggleLike={() => handleToggleLike(t.id)}
                 onContact={() => setContactTeacher(t)}
               />
             ))
           )}
 
           {/* Pagination hint */}
-          {results.length > 0 && (
+          {!loading && !loadError && results.length > 0 && (
             <div className="text-center py-4 text-sm text-gray-400">
-              Showing {results.length} of {TEACHERS.length} teachers
+              Showing {results.length} of {teachers.length} teachers
             </div>
           )}
         </div>
@@ -841,15 +668,11 @@ export default function StudentHome() {
             id: ct.id,
             initials: ct.initials,
             name: ct.name,
-            subjects: ct.subjects,
-            rating: ct.rating,
-            reviews: ct.reviews,
-            rate: ct.rate,
+            courses: ct.courses,
             verified: ct.verified,
             bg: ct.bg,
             color: ct.color,
-            mode: ct.mode,
-            tagline: `${ct.subjects.join(", ")} · ${ct.city}`,
+            tagline: [ct.expertise, ct.city].filter(Boolean).join(" · "),
           }}
           defaultType="inquiry"
           onClose={() => setContactTeacher(null)}

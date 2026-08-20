@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { AiOutlineClose, AiOutlinePhone, AiOutlineUser, AiOutlineMail } from "react-icons/ai";
-import { BsShieldCheck, BsStarFill, BsCheckCircleFill } from "react-icons/bs";
+import { BsShieldCheck, BsCheckCircleFill } from "react-icons/bs";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -31,14 +31,10 @@ interface Teacher {
   initials: string;
   name: string;
   tagline?: string;
-  subjects: string[];
-  rating: number;
-  reviews: number;
-  rate: number;
+  courses: string[];
   verified: boolean;
   bg: string;
   color: string;
-  mode?: string;
 }
 
 interface Props {
@@ -61,7 +57,7 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
   const [name, setName]           = useState("");
   const [phone, setPhone]         = useState("");
   const [email, setEmail]         = useState("");
-  const [subject, setSubject]     = useState(teacher.subjects[0] ?? "");
+  const [subject, setSubject]     = useState(teacher.courses[0] ?? "");
   const [grade, setGrade]         = useState("");
   const [modeP, setModeP]         = useState<"Online" | "Offline" | "Both">("Both");
   const [message, setMessage]     = useState("");
@@ -144,16 +140,8 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
                 {teacher.verified && <BsShieldCheck className="w-4 h-4 text-blue-300 shrink-0" />}
               </div>
               <p className="text-blue-200 text-xs truncate mt-0.5">
-                {teacher.tagline ?? teacher.subjects.join(", ")}
+                {teacher.tagline ?? teacher.courses.join(", ")}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                {[1,2,3,4,5].map((i) => (
-                  <BsStarFill key={i} className={`w-3 h-3 ${i <= Math.floor(teacher.rating) ? "text-amber-400" : "text-white/20"}`} />
-                ))}
-                <span className="text-amber-300 text-xs font-semibold ml-1">{teacher.rating}</span>
-                <span className="text-blue-300 text-xs">({teacher.reviews} reviews)</span>
-                <span className="ml-2 text-xs font-bold" style={{ color: "#FB923C" }}>₹{teacher.rate}/hr</span>
-              </div>
             </div>
           </div>
 

@@ -1,72 +1,52 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AiOutlineUser,
   AiOutlineCamera,
-  AiOutlinePhone,
   AiOutlineMail,
   AiOutlineEnvironment,
   AiOutlineCheckCircle,
-  AiOutlineCloseCircle,
-  AiOutlinePlus,
-  AiOutlineDelete,
   AiOutlineSave,
   AiOutlineArrowLeft,
+  AiOutlineCalendar,
 } from "react-icons/ai";
 import {
   BsStarFill,
   BsStar,
   BsShieldCheck,
   BsLightbulb,
-  BsCurrencyRupee,
 } from "react-icons/bs";
-import { FiBookOpen, FiZap, FiChevronRight } from "react-icons/fi";
-import { MdOutlineVideoCall, MdOutlineSchool, MdOutlineWork } from "react-icons/md";
+import { FiBookOpen, FiZap } from "react-icons/fi";
+import { MdOutlineSchool, MdOutlineWork } from "react-icons/md";
 import AuthService from "@/services/auth.service";
+import mentorService, {
+  CourseOption,
+  QualificationOption,
+  DocumentNameOption,
+  MentorProfileRecord,
+} from "@/services/mentor.service";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
 const ORANGE_BG = "#FFF3EC";
 const ORANGE_BORDER = "#F8C9A8";
 const NAVY_BG = "#EEF0F6";
-const MUTED = "#9FA9C4";
 
-const ALL_SUBJECTS = [
-  "Mathematics", "Physics", "Chemistry", "Biology", "English", "Hindi",
-  "History", "Geography", "Computer Science", "Economics", "Accountancy",
-  "Business Studies", "Political Science", "Sociology", "Psychology",
-  "Music", "Drawing / Art", "Physical Education",
-];
-
-const ALL_LEVELS = [
-  "Class 1–5", "Class 6–8", "Class 9–10", "Class 11–12",
-  "JEE Mains", "JEE Advanced", "NEET", "UPSC", "IELTS / TOEFL",
-  "Beginner", "Intermediate", "Advanced",
-];
-
-const ALL_LANGUAGES = ["Hindi", "English", "Urdu", "Sanskrit", "Other"];
-
-const TEACHING_MODES = ["Online", "Offline", "Both"] as const;
-
-type TeachingMode = (typeof TEACHING_MODES)[number];
-
-interface Qualification {
-  id: number;
-  degree: string;
-  institution: string;
-  year: string;
-}
+const GENDERS = ["Male", "Female", "Other"];
 
 /* ─── Section card wrapper ─────────────────────────── */
 function SectionCard({
   icon,
   title,
+  optional,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
+  optional?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -81,51 +61,68 @@ function SectionCard({
         <h2 className="text-sm font-semibold" style={{ color: NAVY }}>
           {title}
         </h2>
+        {optional && (
+          <span
+            className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full"
+            style={{ background: NAVY_BG, color: "#6B7280" }}
+          >
+            Optional
+          </span>
+        )}
       </div>
       <div className="px-6 py-5">{children}</div>
     </div>
   );
 }
 
-/* ─── Tag input ─────────────────────────────────────── */
-function TagSelector({
+/* ─── Multi-select tags for id-based options ────────── */
+function IdTagSelector({
   label,
-  available,
+  options,
   selected,
   onToggle,
-  color = ORANGE,
+  loading,
+  emptyText,
 }: {
   label?: string;
-  available: string[];
-  selected: string[];
-  onToggle: (item: string) => void;
-  color?: string;
+  options: { id: number; label: string }[];
+  selected: number[];
+  onToggle: (id: number) => void;
+  loading?: boolean;
+  emptyText?: string;
 }) {
   return (
     <div>
       {label && (
         <div className="text-xs font-medium text-gray-700 mb-2">{label}</div>
       )}
-      <div className="flex flex-wrap gap-2">
-        {available.map((item) => {
-          const on = selected.includes(item);
-          return (
-            <button
-              key={item}
-              type="button"
-              onClick={() => onToggle(item)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-150"
-              style={
-                on
-                  ? { background: ORANGE_BG, color: ORANGE, borderColor: ORANGE_BORDER }
-                  : { background: "#F9FAFB", color: "#6B7280", borderColor: "#E5E7EB" }
-              }
-            >
-              {on ? "✓ " : ""}{item}
-            </button>
-          );
-        })}
-      </div>
+      {loading ? (
+        <p className="text-xs text-gray-400">Loading options…</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {options.map((opt) => {
+            const on = selected.includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onToggle(opt.id)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-150"
+                style={
+                  on
+                    ? { background: ORANGE_BG, color: ORANGE, borderColor: ORANGE_BORDER }
+                    : { background: "#F9FAFB", color: "#6B7280", borderColor: "#E5E7EB" }
+                }
+              >
+                {on ? "✓ " : ""}{opt.label}
+              </button>
+            );
+          })}
+          {options.length === 0 && (
+            <span className="text-xs text-gray-300 italic">{emptyText ?? "No options available"}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -160,19 +157,31 @@ const inputCls =
 const inputFocusStyle = { "--tw-ring-color": `${ORANGE}30` } as React.CSSProperties;
 
 /* ─── Completion helper ─────────────────────────────── */
-function calcCompletion(fields: Record<string, unknown>): {
-  pct: number;
-  items: { label: string; done: boolean }[];
-} {
+function calcCompletion(f: {
+  hasPhoto: boolean;
+  gender: string;
+  dob: string;
+  totalExperience: string;
+  expertise: string;
+  about: string;
+  tempAddress: string;
+  permanentAddress: string;
+  city: string;
+  stateName: string;
+  country: string;
+  courseIds: number[];
+  qualificationIds: number[];
+}): { pct: number; items: { label: string; done: boolean }[] } {
   const items = [
-    { label: "Profile photo", done: !!fields.photoUrl },
-    { label: "About / Bio", done: (fields.bio as string)?.trim().length > 30 },
-    { label: "Teaching subjects", done: (fields.subjects as string[])?.length > 0 },
-    { label: "Years of experience", done: !!(fields.experience as string)?.trim() },
-    { label: "Hourly rate", done: !!(fields.rate as string)?.trim() },
-    { label: "Qualifications", done: (fields.qualifications as Qualification[])?.some((q) => q.degree.trim()) },
-    { label: "City & location", done: !!(fields.city as string)?.trim() },
-    { label: "Teaching mode", done: !!(fields.mode as string) },
+    { label: "Profile photo", done: f.hasPhoto },
+    { label: "Gender & date of birth", done: !!f.gender && !!f.dob },
+    { label: "About / Bio (30+ chars)", done: f.about.trim().length > 30 },
+    { label: "Expertise", done: !!f.expertise.trim() },
+    { label: "Courses you teach", done: f.courseIds.length > 0 },
+    { label: "Years of experience", done: !!f.totalExperience.trim() },
+    { label: "Highest qualification", done: f.qualificationIds.length > 0 },
+    { label: "Temporary & permanent address", done: !!f.tempAddress.trim() && !!f.permanentAddress.trim() },
+    { label: "City, state & country", done: !!f.city.trim() && !!f.stateName.trim() && !!f.country.trim() },
   ];
   const done = items.filter((i) => i.done).length;
   return { pct: Math.round((done / items.length) * 100), items };
@@ -195,70 +204,195 @@ function Stars({ n }: { n: number }) {
 
 /* ─── Main component ────────────────────────────────── */
 export default function TeacherProfile() {
+  const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const idProofInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  /* Form state */
+  /* Basic identity (display only — not part of the mentor profile payload) */
   const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [firstName, setFirstName] = useState("Teacher");
   const [lastName, setLastName] = useState("");
-  const [tagline, setTagline] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email] = useState("teacher@example.com");
-  const [bio, setBio] = useState("");
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [levels, setLevels] = useState<string[]>([]);
-  const [experience, setExperience] = useState("");
-  const [mode, setMode] = useState<TeachingMode | "">("");
-  const [rate, setRate] = useState("");
-  const [languages, setLanguages] = useState<string[]>(["Hindi", "English"]);
+  const [email, setEmail] = useState("teacher@example.com");
+
+  /* Existing profile fetched from the API, if the teacher already created one */
+  const [existingProfile, setExistingProfile] = useState<MentorProfileRecord | null>(null);
+  const [existingIdentityFileUrl, setExistingIdentityFileUrl] = useState<string | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  /* Mentor profile fields */
+  const [gender, setGender] = useState("");
+  const [dob, setDob] = useState("");
+  const [totalExperience, setTotalExperience] = useState("");
+  const [expertise, setExpertise] = useState("");
+  const [about, setAbout] = useState("");
+  const [tempAddress, setTempAddress] = useState("");
+  const [permanentAddress, setPermanentAddress] = useState("");
   const [city, setCity] = useState("");
-  const [area, setArea] = useState("");
-  const [qualifications, setQualifications] = useState<Qualification[]>([
-    { id: 1, degree: "", institution: "", year: "" },
-  ]);
+  const [stateName, setStateName] = useState("");
+  const [country, setCountry] = useState("India");
+  const [courseIds, setCourseIds] = useState<number[]>([]);
+  const [qualificationIds, setQualificationIds] = useState<number[]>([]);
+
+  /* Optional identity verification */
+  const [identityFile, setIdentityFile] = useState<File | null>(null);
+  const [identityDocId, setIdentityDocId] = useState<number | undefined>(undefined);
+
+  /* Dropdown option lists fetched from the API */
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [qualificationOptions, setQualificationOptions] = useState<QualificationOption[]>([]);
+  const [documentNames, setDocumentNames] = useState<DocumentNameOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [coursesRes, qualificationsRes, documentNamesRes, profilesRes] = await Promise.all([
+          mentorService.getCourses(),
+          mentorService.getQualifications(),
+          mentorService.getDocumentNames(),
+          mentorService.getProfiles(),
+        ]);
+        if (cancelled) return;
+        setCourses(coursesRes);
+        setQualificationOptions(qualificationsRes);
+        setDocumentNames(documentNamesRes);
+
+        const existing = profilesRes[0] ?? null;
+        setExistingProfile(existing);
+        if (existing) {
+          if (existing.user?.name) setEmail(existing.user.name);
+          setGender(existing.gender || "");
+          setDob(existing.date_of_birth || "");
+          setTotalExperience(
+            existing.total_expierence_in_years !== null ? String(existing.total_expierence_in_years) : "",
+          );
+          setExpertise(existing.expertise || "");
+          setAbout(existing.about || "");
+          setTempAddress(existing.temp_address || "");
+          setPermanentAddress(existing.permanent_address || "");
+          setCity(existing.city || "");
+          setStateName(existing.state || "");
+          setCountry(existing.country || "India");
+          setCourseIds(existing.courses_can_teach.map((c) => c.id));
+          setQualificationIds(existing.highest_qualification);
+          setIdentityDocId(existing.identity_verification_name?.id);
+          if (existing.profile_pic) setPhotoUrl(existing.profile_pic);
+          if (existing.identity_verification) setExistingIdentityFileUrl(existing.identity_verification);
+        }
+      } catch {
+        if (!cancelled) setOptionsError("Couldn't load form options. Please refresh the page.");
+      } finally {
+        if (!cancelled) {
+          setLoadingOptions(false);
+          setLoadingProfile(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* Computed */
-  const fields = { photoUrl, bio, subjects, experience, rate, qualifications, city, mode };
-  const { pct, items: completionItems } = calcCompletion(fields);
+  const hasExistingPhoto = !!existingProfile?.profile_pic;
+  const { pct, items: completionItems } = calcCompletion({
+    hasPhoto: !!photoFile || hasExistingPhoto,
+    gender,
+    dob,
+    totalExperience,
+    expertise,
+    about,
+    tempAddress,
+    permanentAddress,
+    city,
+    stateName,
+    country,
+    courseIds,
+    qualificationIds,
+  });
   const initials = `${firstName[0] ?? "T"}${lastName[0] ?? ""}`.toUpperCase();
+  const selectedCourseNames = courses.filter((c) => courseIds.includes(c.id)).map((c) => c.name);
 
-  function toggleTag(list: string[], item: string, setter: (v: string[]) => void) {
-    setter(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
-  }
-
-  function addQualification() {
-    setQualifications((prev) => [
-      ...prev,
-      { id: Date.now(), degree: "", institution: "", year: "" },
-    ]);
-  }
-
-  function removeQualification(id: number) {
-    setQualifications((prev) => prev.filter((q) => q.id !== id));
-  }
-
-  function updateQualification(id: number, key: keyof Qualification, val: string) {
-    setQualifications((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, [key]: val } : q)),
-    );
+  function toggleId(list: number[], id: number, setter: (v: number[]) => void) {
+    setter(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPhotoUrl(url);
+    setPhotoFile(file);
+    setPhotoUrl(URL.createObjectURL(file));
+  }
+
+  function handleIdProofChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIdentityFile(file);
   }
 
   async function handleSave() {
+    setSaveError(null);
+
+    if (!photoFile && !hasExistingPhoto) {
+      setSaveError("Please upload a profile photo.");
+      return;
+    }
+    if (
+      !gender ||
+      !dob ||
+      !totalExperience.trim() ||
+      !expertise.trim() ||
+      about.trim().length <= 30 ||
+      !tempAddress.trim() ||
+      !permanentAddress.trim() ||
+      !city.trim() ||
+      !stateName.trim() ||
+      !country.trim() ||
+      courseIds.length === 0 ||
+      qualificationIds.length === 0
+    ) {
+      setSaveError("Please fill in all required fields before saving.");
+      return;
+    }
+
     setSaving(true);
-    /* Replace with real API call */
-    await new Promise((r) => setTimeout(r, 1000));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      const payload = {
+        profile_pic: photoFile ?? undefined,
+        gender,
+        date_of_birth: dob,
+        temp_address: tempAddress,
+        permanent_address: permanentAddress,
+        city,
+        state: stateName,
+        country,
+        total_expierence_in_years: Number(totalExperience),
+        expertise,
+        about,
+        courses_can_teach: courseIds,
+        highest_qualification: qualificationIds,
+        identity_verification: identityFile ?? undefined,
+        identity_verification_name: identityDocId,
+      };
+
+      if (existingProfile) {
+        await mentorService.updateProfile(payload);
+      } else {
+        await mentorService.createProfile(payload);
+      }
+      router.push("/dashboard");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Unable to save profile.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -293,11 +427,6 @@ export default function TeacherProfile() {
 
           {/* Right */}
           <div className="flex items-center gap-3">
-            {saved && (
-              <span className="hidden sm:flex items-center gap-1.5 text-xs text-green-600 font-medium">
-                <AiOutlineCheckCircle className="w-4 h-4" /> Saved!
-              </span>
-            )}
             <button
               onClick={handleSave}
               disabled={saving}
@@ -340,6 +469,24 @@ export default function TeacherProfile() {
             This is how students and parents will find you on TutorNear
           </p>
         </div>
+
+        {loadingProfile && (
+          <div className="mb-5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-600">
+            Loading your profile…
+          </div>
+        )}
+
+        {!loadingProfile && existingProfile && (
+          <div className="mb-5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
+            This form has been pre-filled with your existing profile. You can update just the fields you want to change — your current photo is kept unless you choose a new one.
+          </div>
+        )}
+
+        {(saveError || optionsError) && (
+          <div className="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
+            {saveError || optionsError}
+          </div>
+        )}
 
         <div className="flex gap-6 items-start">
 
@@ -393,9 +540,15 @@ export default function TeacherProfile() {
                   <p className="text-xs text-gray-400 mt-1.5">
                     JPG or PNG · Max 2 MB · Recommended 400×400
                   </p>
-                  <p className="text-xs text-orange-500 mt-0.5 font-medium">
-                    Teachers with photos get 3× more inquiries
-                  </p>
+                  {hasExistingPhoto && !photoFile ? (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      This is your current photo. Choose a new file to replace it.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-orange-500 mt-0.5 font-medium">
+                      Required to publish your profile
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -421,48 +574,51 @@ export default function TeacherProfile() {
                 </Field>
               </div>
 
-              {/* Tagline */}
-              <div className="mb-4">
-                <Field
-                  label="Professional Tagline"
-                  hint="A short headline students see first (max 80 chars)"
-                >
+              <Field label="Email Address">
+                <div className="flex items-center px-3.5 py-2.5 text-sm text-gray-500 border border-gray-100 rounded-xl bg-gray-50">
+                  <AiOutlineMail className="w-4 h-4 mr-2 shrink-0 text-gray-400" />
+                  {email}
+                  <span className="ml-auto flex items-center gap-1 text-green-600 text-xs font-medium">
+                    <AiOutlineCheckCircle className="w-3.5 h-3.5" /> Verified
+                  </span>
+                </div>
+              </Field>
+            </SectionCard>
+
+            {/* ── Personal & Experience Details ── */}
+            <SectionCard icon={<AiOutlineCalendar className="w-4 h-4" />} title="Personal & Experience Details">
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="Gender" required>
+                  <select
+                    className={inputCls}
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="">Select gender</option>
+                    {GENDERS.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Date of Birth" required>
                   <input
+                    type="date"
                     className={inputCls}
                     style={inputFocusStyle}
-                    value={tagline}
-                    onChange={(e) => setTagline(e.target.value.slice(0, 80))}
-                    placeholder="e.g. Expert Maths Tutor · 8 yrs exp · JEE specialist"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
                   />
-                  <p className="text-[11px] text-gray-400 text-right -mt-1">
-                    {tagline.length}/80
-                  </p>
                 </Field>
-              </div>
-
-              {/* Phone & Email */}
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Phone Number">
-                  <div className="flex">
-                    <span className="flex items-center px-3 bg-gray-50 border border-r-0 border-gray-200 rounded-l-xl text-sm text-gray-500">
-                      +91
-                    </span>
-                    <input
-                      className="flex-1 px-3.5 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-r-xl outline-none bg-white placeholder:text-gray-400 hover:border-gray-300 focus:border-orange-400 transition-all"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      placeholder="9876543210"
-                    />
-                  </div>
-                </Field>
-                <Field label="Email Address">
-                  <div className="flex items-center px-3.5 py-2.5 text-sm text-gray-500 border border-gray-100 rounded-xl bg-gray-50">
-                    <AiOutlineMail className="w-4 h-4 mr-2 shrink-0 text-gray-400" />
-                    {email}
-                    <span className="ml-auto flex items-center gap-1 text-green-600 text-xs font-medium">
-                      <AiOutlineCheckCircle className="w-3.5 h-3.5" /> Verified
-                    </span>
-                  </div>
+                <Field label="Years of Experience" required>
+                  <input
+                    type="number"
+                    min="0"
+                    className={inputCls}
+                    style={inputFocusStyle}
+                    value={totalExperience}
+                    onChange={(e) => setTotalExperience(e.target.value)}
+                    placeholder="e.g. 5"
+                  />
                 </Field>
               </div>
             </SectionCard>
@@ -478,17 +634,17 @@ export default function TeacherProfile() {
                   className={`${inputCls} resize-none`}
                   style={inputFocusStyle}
                   rows={5}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value.slice(0, 600))}
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value.slice(0, 600))}
                   placeholder="e.g. I'm a passionate mathematics teacher with 8+ years of experience helping students from Class 9 to JEE Advanced. My teaching focuses on concept clarity and problem-solving shortcuts..."
                 />
                 <div className="flex justify-between">
                   <span className="text-[11px] text-gray-400">Minimum 30 characters</span>
                   <span
                     className="text-[11px] font-medium"
-                    style={{ color: bio.length > 500 ? ORANGE : MUTED }}
+                    style={{ color: about.length > 500 ? ORANGE : "#9FA9C4" }}
                   >
-                    {bio.length}/600
+                    {about.length}/600
                   </span>
                 </div>
               </Field>
@@ -496,129 +652,79 @@ export default function TeacherProfile() {
 
             {/* ── Teaching Details ── */}
             <SectionCard icon={<MdOutlineWork className="w-4 h-4" />} title="Teaching Details">
-
-              {/* Subjects */}
               <div className="mb-5">
-                <TagSelector
-                  label="Subjects you teach *"
-                  available={ALL_SUBJECTS}
-                  selected={subjects}
-                  onToggle={(s) => toggleTag(subjects, s, setSubjects)}
-                />
-              </div>
-
-              {/* Levels */}
-              <div className="mb-5 pb-5 border-b border-gray-100">
-                <TagSelector
-                  label="Student levels / boards"
-                  available={ALL_LEVELS}
-                  selected={levels}
-                  onToggle={(l) => toggleTag(levels, l, setLevels)}
-                />
-              </div>
-
-              {/* Experience + Rate row */}
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                <Field label="Years of Experience" required>
-                  <select
+                <Field
+                  label="Expertise"
+                  required
+                  hint="A short label for what you're known for, e.g. Teaching, JEE Coaching"
+                >
+                  <input
                     className={inputCls}
-                    value={experience}
-                    onChange={(e) => setExperience(e.target.value)}
-                  >
-                    <option value="">Select years</option>
-                    {["< 1 year", "1–2 years", "3–5 years", "6–10 years", "10+ years"].map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Hourly Rate (₹)" required>
-                  <div className="flex">
-                    <span className="flex items-center px-3 bg-gray-50 border border-r-0 border-gray-200 rounded-l-xl text-sm text-gray-500">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      className="flex-1 px-3.5 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-r-xl outline-none bg-white placeholder:text-gray-400 hover:border-gray-300 focus:border-orange-400 transition-all"
-                      value={rate}
-                      onChange={(e) => setRate(e.target.value)}
-                      placeholder="e.g. 500"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-400">Per hour, per student</p>
+                    style={inputFocusStyle}
+                    value={expertise}
+                    onChange={(e) => setExpertise(e.target.value)}
+                    placeholder="e.g. Teaching"
+                  />
                 </Field>
               </div>
 
-              {/* Teaching mode */}
-              <div className="mb-5 pb-5 border-b border-gray-100">
-                <div className="text-xs font-medium text-gray-700 mb-3">Teaching Mode *</div>
-                <div className="flex gap-3">
-                  {TEACHING_MODES.map((m) => (
-                    <label
-                      key={m}
-                      className="flex items-center gap-2.5 flex-1 px-4 py-3 rounded-xl border cursor-pointer transition-all"
-                      style={
-                        mode === m
-                          ? { background: ORANGE_BG, borderColor: ORANGE_BORDER }
-                          : { borderColor: "#E5E7EB", background: "#FAFAFA" }
-                      }
-                    >
-                      <input
-                        type="radio"
-                        name="mode"
-                        value={m}
-                        checked={mode === m}
-                        onChange={() => setMode(m)}
-                        className="shrink-0"
-                        style={{ accentColor: ORANGE }}
-                      />
-                      <div>
-                        <div
-                          className="text-xs font-semibold"
-                          style={{ color: mode === m ? ORANGE : "#374151" }}
-                        >
-                          {m}
-                        </div>
-                        <div className="text-[10px] text-gray-400">
-                          {m === "Online" ? "Via video call" : m === "Offline" ? "At home / centre" : "Flexible"}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Languages */}
-              <TagSelector
-                label="Languages of instruction"
-                available={ALL_LANGUAGES}
-                selected={languages}
-                onToggle={(l) => toggleTag(languages, l, setLanguages)}
+              <IdTagSelector
+                label="Courses you can teach *"
+                options={courses.map((c) => ({ id: c.id, label: c.name }))}
+                selected={courseIds}
+                onToggle={(id) => toggleId(courseIds, id, setCourseIds)}
+                loading={loadingOptions}
               />
             </SectionCard>
 
             {/* ── Location ── */}
             <SectionCard icon={<AiOutlineEnvironment className="w-4 h-4" />} title="Location">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="City" required>
-                  <select
-                    className={inputCls}
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                  >
-                    <option value="">Select city</option>
-                    {["Varanasi", "Lucknow", "Kanpur", "Prayagraj", "Agra", "Noida", "Delhi NCR", "Mumbai", "Pune", "Hyderabad", "Bangalore", "Chennai", "Other"].map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Area / Locality" hint="Helps nearby students find you">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Field label="Temporary Address" required>
                   <input
                     className={inputCls}
                     style={inputFocusStyle}
-                    value={area}
-                    onChange={(e) => setArea(e.target.value)}
-                    placeholder="e.g. Sigra, Lanka, Assi"
+                    value={tempAddress}
+                    onChange={(e) => setTempAddress(e.target.value)}
+                    placeholder="e.g. Delhi 6"
+                  />
+                </Field>
+                <Field label="Permanent Address" required>
+                  <input
+                    className={inputCls}
+                    style={inputFocusStyle}
+                    value={permanentAddress}
+                    onChange={(e) => setPermanentAddress(e.target.value)}
+                    placeholder="e.g. Mumbai Bandra"
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="City" required>
+                  <input
+                    className={inputCls}
+                    style={inputFocusStyle}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Delhi"
+                  />
+                </Field>
+                <Field label="State" required>
+                  <input
+                    className={inputCls}
+                    style={inputFocusStyle}
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    placeholder="e.g. Delhi"
+                  />
+                </Field>
+                <Field label="Country" required>
+                  <input
+                    className={inputCls}
+                    style={inputFocusStyle}
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="e.g. India"
                   />
                 </Field>
               </div>
@@ -626,65 +732,60 @@ export default function TeacherProfile() {
 
             {/* ── Qualifications ── */}
             <SectionCard icon={<MdOutlineSchool className="w-4 h-4" />} title="Qualifications & Education">
-              <div className="flex flex-col gap-3">
-                {qualifications.map((q, idx) => (
-                  <div key={q.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Degree {idx + 1}
-                      </span>
-                      {qualifications.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeQualification(q.id)}
-                          className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
-                        >
-                          <AiOutlineDelete className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <Field label="Degree / Certificate">
-                        <input
-                          className={inputCls}
-                          style={inputFocusStyle}
-                          value={q.degree}
-                          onChange={(e) => updateQualification(q.id, "degree", e.target.value)}
-                          placeholder="e.g. B.Sc. Mathematics"
-                        />
-                      </Field>
-                      <Field label="Institution">
-                        <input
-                          className={inputCls}
-                          style={inputFocusStyle}
-                          value={q.institution}
-                          onChange={(e) => updateQualification(q.id, "institution", e.target.value)}
-                          placeholder="e.g. BHU, Varanasi"
-                        />
-                      </Field>
-                      <Field label="Year of Passing">
-                        <input
-                          className={inputCls}
-                          style={inputFocusStyle}
-                          value={q.year}
-                          onChange={(e) => updateQualification(q.id, "year", e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          placeholder="e.g. 2018"
-                          maxLength={4}
-                        />
-                      </Field>
-                    </div>
-                  </div>
-                ))}
+              <IdTagSelector
+                label="Highest qualification *"
+                options={qualificationOptions.map((q) => ({ id: q.id, label: q.degree_name }))}
+                selected={qualificationIds}
+                onToggle={(id) => toggleId(qualificationIds, id, setQualificationIds)}
+                loading={loadingOptions}
+              />
+            </SectionCard>
 
-                <button
-                  type="button"
-                  onClick={addQualification}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed text-sm font-medium transition-all hover:bg-gray-50"
-                  style={{ borderColor: ORANGE_BORDER, color: ORANGE }}
-                >
-                  <AiOutlinePlus className="w-4 h-4" />
-                  Add another degree
-                </button>
+            {/* ── Identity Verification (optional) ── */}
+            <SectionCard icon={<BsShieldCheck className="w-4 h-4" />} title="Identity Verification" optional>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="ID Document Type">
+                  <select
+                    className={inputCls}
+                    value={identityDocId ?? ""}
+                    onChange={(e) => setIdentityDocId(e.target.value ? Number(e.target.value) : undefined)}
+                  >
+                    <option value="">Select document type</option>
+                    {documentNames.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Upload ID Proof" hint="JPG, PNG or PDF">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => idProofInputRef.current?.click()}
+                      className="text-sm font-medium px-3.5 py-2.5 rounded-xl border transition-all hover:bg-gray-50 text-gray-600 border-gray-200"
+                    >
+                      {identityFile ? "Change file" : "Choose file"}
+                    </button>
+                    {identityFile ? (
+                      <span className="text-xs text-gray-500 truncate">{identityFile.name}</span>
+                    ) : existingIdentityFileUrl ? (
+                      <a
+                        href={existingIdentityFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline truncate"
+                      >
+                        View current file
+                      </a>
+                    ) : null}
+                    <input
+                      ref={idProofInputRef}
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={handleIdProofChange}
+                    />
+                  </div>
+                </Field>
               </div>
             </SectionCard>
 
@@ -817,8 +918,8 @@ export default function TeacherProfile() {
                       <BsShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
                     </div>
                     <div className="text-xs text-gray-500 truncate">
-                      {tagline || (subjects.length > 0 ? subjects.slice(0, 2).join(", ") : "Your subjects")}
-                      {experience ? ` · ${experience}` : ""}
+                      {expertise || (selectedCourseNames.length > 0 ? selectedCourseNames.slice(0, 2).join(", ") : "Your expertise")}
+                      {totalExperience ? ` · ${totalExperience} yrs` : ""}
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
                       <Stars n={0} />
@@ -828,21 +929,18 @@ export default function TeacherProfile() {
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-2.5">
-                  {subjects.slice(0, 3).map((s) => (
+                  {selectedCourseNames.slice(0, 3).map((s) => (
                     <span key={s} className="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full border border-gray-100">
                       {s}
                     </span>
                   ))}
-                  {subjects.length === 0 && (
-                    <span className="text-[10px] text-gray-300 italic">No subjects added</span>
+                  {selectedCourseNames.length === 0 && (
+                    <span className="text-[10px] text-gray-300 italic">No courses added</span>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-semibold" style={{ color: ORANGE }}>
-                      {rate ? `₹${rate}/hr` : "₹—/hr"}
-                    </div>
                     <div className="text-xs text-gray-400 flex items-center gap-0.5">
                       <AiOutlineEnvironment className="w-3 h-3" />
                       {city || "Location not set"}
@@ -873,8 +971,8 @@ export default function TeacherProfile() {
               <div className="flex flex-col gap-2.5">
                 {[
                   "A clear bio with your teaching philosophy increases trust by 2×",
-                  "Add your degree from a recognised university to get a verified badge",
-                  "Set a competitive rate — check what similar tutors charge in your city",
+                  "Add your highest qualification to get a verified badge",
+                  "Upload an ID proof so students know you're verified",
                 ].map((tip, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span
