@@ -104,13 +104,13 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
     /* Overlay */
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in"
       style={{ background: "rgba(10,22,40,0.65)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       {/* Panel */}
       <div
-        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-pop-in"
         style={{ maxHeight: "90vh" }}
       >
         {/* Colored header strip */}
@@ -151,10 +151,10 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
               <button
                 key={cfg.key}
                 onClick={() => setTab(cfg.key)}
-                className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                   tab === cfg.key
-                    ? "bg-white text-gray-900 shadow"
-                    : "text-white/70 hover:text-white"
+                    ? "bg-white text-gray-900 shadow scale-[1.03]"
+                    : "text-white/70 hover:text-white hover:scale-[1.02]"
                 }`}
               >
                 <span>{cfg.emoji}</span>
@@ -167,10 +167,10 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
         {/* Success state */}
         {submitted ? (
           <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4 animate-pop-in">
               <BsCheckCircleFill className="w-8 h-8 text-green-500" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <h3 className="text-lg font-bold text-gray-900 mb-2 animate-fade-in-up">
               {tab === "demo" ? "Demo Booked!" : tab === "message" ? "Message Sent!" : "Inquiry Sent!"}
             </h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
@@ -313,7 +313,7 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
                 style={{ background: ORANGE }}
               >
                 {loading ? (

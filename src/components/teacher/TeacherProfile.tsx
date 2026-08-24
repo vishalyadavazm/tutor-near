@@ -252,18 +252,18 @@ export default function TeacherProfile() {
 
     (async () => {
       try {
-        const [coursesRes, qualificationsRes, documentNamesRes, profilesRes] = await Promise.all([
+        const [coursesRes, qualificationsRes, documentNamesRes, myProfileRes] = await Promise.all([
           mentorService.getCourses(),
           mentorService.getQualifications(),
           mentorService.getDocumentNames(),
-          mentorService.getProfiles(),
+          mentorService.getMyProfile(),
         ]);
         if (cancelled) return;
         setCourses(coursesRes);
         setQualificationOptions(qualificationsRes);
         setDocumentNames(documentNamesRes);
 
-        const existing = profilesRes[0] ?? null;
+        const { profile: existing, basicUser } = myProfileRes;
         setExistingProfile(existing);
         if (existing) {
           if (existing.user?.name) setEmail(existing.user.name);
@@ -284,6 +284,10 @@ export default function TeacherProfile() {
           setIdentityDocId(existing.identity_verification_name?.id);
           if (existing.profile_pic) setPhotoUrl(existing.profile_pic);
           if (existing.identity_verification) setExistingIdentityFileUrl(existing.identity_verification);
+        } else if (basicUser) {
+          if (basicUser.first_name) setFirstName(basicUser.first_name);
+          if (basicUser.last_name) setLastName(basicUser.last_name);
+          if (basicUser.email) setEmail(basicUser.email);
         }
       } catch {
         if (!cancelled) setOptionsError("Couldn't load form options. Please refresh the page.");

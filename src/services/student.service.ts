@@ -11,6 +11,15 @@ export interface StudentProfileUserRef {
   name: string;
 }
 
+/** Returned in place of `user` when the student hasn't created a profile yet. */
+export interface StudentProfileBasicUser {
+  id: number;
+  email: string;
+  phone: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface StudentStandard {
   id: number;
   name: string;
@@ -66,8 +75,25 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 
 class StudentService {
   async getProfiles(): Promise<StudentProfileRecord[]> {
-    const res = await api.get<ListResponse<StudentProfileRecord>>(API.STUDENT_PROFILE);
-    return res.data.data;
+    const res = await api.get<{ data: StudentProfileRecord[] | { id: null; user: StudentProfileBasicUser } }>(
+      API.STUDENT_PROFILE,
+    );
+    return Array.isArray(res.data.data) ? res.data.data : [];
+  }
+
+  /**
+   * Before a student has created a profile, the API returns `{ id: null, user: {...basic user fields} }`
+   * instead of a list — this fetches that in one call so the create form can prefill name/email.
+   */
+  async getMyProfile(): Promise<{ profile: StudentProfileRecord | null; basicUser: StudentProfileBasicUser | null }> {
+    const res = await api.get<{ data: StudentProfileRecord[] | { id: null; user: StudentProfileBasicUser } }>(
+      API.STUDENT_PROFILE,
+    );
+    const data = res.data.data;
+    if (Array.isArray(data)) {
+      return { profile: data[0] ?? null, basicUser: null };
+    }
+    return { profile: null, basicUser: data?.user ?? null };
   }
 
   private buildProfileFormData(payload: StudentProfilePayload): FormData {

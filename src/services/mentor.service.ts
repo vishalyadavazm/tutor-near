@@ -26,6 +26,15 @@ export interface MentorProfileUserRef {
   name: string;
 }
 
+/** Returned in place of `user` when the mentor hasn't created a profile yet. */
+export interface MentorProfileBasicUser {
+  id: number;
+  email: string;
+  phone: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface MentorProfileRecord {
   id: number;
   created_t: string;
@@ -146,8 +155,25 @@ class MentorService {
   }
 
   async getProfiles(): Promise<MentorProfileRecord[]> {
-    const res = await api.get<ListResponse<MentorProfileRecord>>(API.MENTOR_PROFILE);
-    return res.data.data;
+    const res = await api.get<{ data: MentorProfileRecord[] | { id: null; user: MentorProfileBasicUser } }>(
+      API.MENTOR_PROFILE,
+    );
+    return Array.isArray(res.data.data) ? res.data.data : [];
+  }
+
+  /**
+   * Before a mentor has created a profile, the API returns `{ id: null, user: {...basic user fields} }`
+   * instead of a list — this fetches that in one call so the create form can prefill name/email.
+   */
+  async getMyProfile(): Promise<{ profile: MentorProfileRecord | null; basicUser: MentorProfileBasicUser | null }> {
+    const res = await api.get<{ data: MentorProfileRecord[] | { id: null; user: MentorProfileBasicUser } }>(
+      API.MENTOR_PROFILE,
+    );
+    const data = res.data.data;
+    if (Array.isArray(data)) {
+      return { profile: data[0] ?? null, basicUser: null };
+    }
+    return { profile: null, basicUser: data?.user ?? null };
   }
 
   async getAllProfiles(): Promise<MentorDirectoryEntry[]> {

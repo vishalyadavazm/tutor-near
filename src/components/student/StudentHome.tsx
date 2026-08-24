@@ -18,7 +18,7 @@ import {
   BsStarFill,
   BsStar,
 } from "react-icons/bs";
-import { FiChevronDown, FiChevronUp, FiZap, FiChevronRight } from "react-icons/fi";
+import { FiChevronDown, FiZap, FiChevronRight } from "react-icons/fi";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
@@ -74,13 +74,15 @@ function FilterSection({
   return (
     <div className="border-b border-gray-100 py-4">
       <button
-        className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 mb-3"
+        className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 mb-3 group"
         onClick={() => setOpen((o) => !o)}
       >
         {title}
-        {open ? <FiChevronUp className="w-4 h-4 text-gray-400" /> : <FiChevronDown className="w-4 h-4 text-gray-400" />}
+        <FiChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""} group-hover:text-gray-600`}
+        />
       </button>
-      {open && children}
+      {open && <div className="animate-fade-in-up">{children}</div>}
     </div>
   );
 }
@@ -100,16 +102,16 @@ function CheckboxFilter({
       onClick={onChange}
     >
       <div
-        className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all"
+        className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200 group-hover:scale-110"
         style={checked ? { background: ORANGE, borderColor: ORANGE } : { borderColor: "#D1D5DB" }}
       >
         {checked && (
-          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 12 12">
+          <svg className="w-2.5 h-2.5 text-white animate-pop-in" fill="currentColor" viewBox="0 0 12 12">
             <path d="M10 3L5 8.5 2 5.5" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
-      <span className="text-sm text-gray-600 group-hover:text-gray-900">{label}</span>
+      <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{label}</span>
     </label>
   );
 }
@@ -138,25 +140,30 @@ function TeacherCard({
   liking,
   onToggleLike,
   onContact,
+  index = 0,
 }: {
   t: DisplayTeacher;
   liking: boolean;
   onToggleLike: () => void;
   onContact: () => void;
+  index?: number;
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-md transition-all duration-200">
+    <div
+      className="group bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 animate-fade-in-up"
+      style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+    >
       <div className="flex items-start gap-4">
         {/* Avatar */}
         {t.photoUrl ? (
           <img
             src={t.photoUrl}
             alt={t.name}
-            className="w-14 h-14 rounded-2xl object-cover shrink-0"
+            className="w-14 h-14 rounded-2xl object-cover shrink-0 transition-transform duration-200 group-hover:scale-105"
           />
         ) : (
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0"
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0 transition-transform duration-200 group-hover:scale-105"
             style={{ background: t.bg, color: t.color }}
           >
             {t.initials}
@@ -180,10 +187,10 @@ function TeacherCard({
             <button
               onClick={onToggleLike}
               disabled={liking}
-              className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 transition-all shrink-0 disabled:opacity-50"
+              className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all shrink-0 disabled:opacity-50"
             >
               {t.isLiked ? (
-                <BsHeartFill className="w-4 h-4 text-red-500" />
+                <BsHeartFill className="w-4 h-4 text-red-500 animate-heart-pop" />
               ) : (
                 <BsHeart className="w-4 h-4" />
               )}
@@ -569,7 +576,7 @@ export default function StudentHome() {
       {/* ── Hero search bar ── */}
       <div className="border-b border-gray-100 bg-white">
         <div className="max-w-[1400px] mx-auto px-5 py-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-3 animate-fade-in-up">
             <div>
               <h1 className="text-lg font-bold" style={{ color: NAVY }}>
                 Find Your Perfect Tutor
@@ -621,7 +628,7 @@ export default function StudentHome() {
       <div className="max-w-[1400px] mx-auto px-5 py-6 flex gap-6 items-start">
 
         {/* ── Filter sidebar (desktop) ── */}
-        <aside className="hidden lg:block w-60 shrink-0 sticky top-24 self-start bg-white border border-gray-100 rounded-2xl p-4">
+        <aside className="hidden lg:block w-60 shrink-0 sticky top-24 self-start bg-white border border-gray-100 rounded-2xl p-4 animate-fade-in-up hover:shadow-md transition-shadow duration-300">
           {filterPanel}
         </aside>
 
@@ -629,10 +636,10 @@ export default function StudentHome() {
         {mobileFiltersOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div
-              className="absolute inset-0 bg-black/40"
+              className="absolute inset-0 bg-black/40 animate-fade-in"
               onClick={() => setMobileFiltersOpen(false)}
             />
-            <div className="absolute right-0 top-0 bottom-0 w-72 bg-white overflow-y-auto p-5 shadow-xl">
+            <div className="absolute right-0 top-0 bottom-0 w-72 bg-white overflow-y-auto p-5 shadow-xl animate-slide-in-right">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-base font-semibold" style={{ color: NAVY }}>Filters</span>
                 <button onClick={() => setMobileFiltersOpen(false)}>
@@ -659,8 +666,23 @@ export default function StudentHome() {
             </div>
           )}
           {loading ? (
-            <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center text-sm text-gray-400">
-              Loading tutors…
+            <div className="flex flex-col gap-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-gray-100 rounded-2xl p-5 animate-fade-in-up"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-2xl shrink-0 animate-shimmer" />
+                    <div className="flex-1 min-w-0 flex flex-col gap-2.5">
+                      <div className="h-4 w-1/3 rounded-full animate-shimmer" />
+                      <div className="h-3 w-1/2 rounded-full animate-shimmer" />
+                      <div className="h-3 w-2/3 rounded-full animate-shimmer" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : loadError ? (
             <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center text-sm text-red-500">
@@ -682,10 +704,11 @@ export default function StudentHome() {
               </button>
             </div>
           ) : (
-            results.map((t) => (
+            results.map((t, i) => (
               <TeacherCard
                 key={t.id}
                 t={t}
+                index={i}
                 liking={likingId === t.id}
                 onToggleLike={() => handleToggleLike(t.id)}
                 onContact={() => setContactTeacher(t)}
@@ -703,13 +726,17 @@ export default function StudentHome() {
 
         {/* ── Right sidebar: your profile ── */}
         <aside className="hidden xl:flex flex-col w-72 shrink-0 sticky top-24 self-start gap-4">
-          <div className="bg-white border border-gray-100 rounded-2xl p-5">
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 animate-pop-in">
             {myProfileLoading ? (
-              <div className="text-xs text-gray-400 text-center py-6">Loading your profile…</div>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <div className="w-16 h-16 rounded-full animate-shimmer" />
+                <div className="h-3 w-2/3 rounded-full animate-shimmer" />
+                <div className="h-2.5 w-1/3 rounded-full animate-shimmer" />
+              </div>
             ) : (
               <>
                 <div className="flex flex-col items-center text-center mb-4">
-                  <div className="relative mb-3">
+                  <div className="relative mb-3 transition-transform duration-300 hover:scale-105">
                     {myProfile?.profile_pic ? (
                       <img
                         src={myProfile.profile_pic}
@@ -743,7 +770,7 @@ export default function StudentHome() {
                   </div>
                   {myProfile?.looking_for_mentor && (
                     <span
-                      className="mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      className="mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full animate-gentle-pulse"
                       style={{ background: ORANGE_BG, color: ORANGE }}
                     >
                       Looking for a mentor
@@ -758,9 +785,9 @@ export default function StudentHome() {
                       {computeStudentCompletion(myProfile)}%
                     </span>
                   </div>
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full">
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className="h-1.5 rounded-full transition-all"
+                      className="h-1.5 rounded-full transition-all duration-700 ease-out"
                       style={{ width: `${computeStudentCompletion(myProfile)}%`, background: ORANGE }}
                     />
                   </div>
@@ -768,24 +795,27 @@ export default function StudentHome() {
 
                 <Link
                   href="/profile"
-                  className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                  className="group w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-orange-200 hover:-translate-y-0.5 active:translate-y-0"
                   style={{ background: ORANGE }}
                 >
                   {myProfile ? "Edit Profile" : "Complete Profile"}
-                  <FiChevronRight className="w-4 h-4" />
+                  <FiChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </>
             )}
           </div>
 
           {myProfile && computeStudentCompletion(myProfile) < 100 && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-5">
+            <div
+              className="bg-white border border-gray-100 rounded-2xl p-5 animate-fade-in-up hover:shadow-md transition-shadow"
+              style={{ animationDelay: "120ms" }}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: ORANGE_BG }}
                 >
-                  <FiZap className="w-3.5 h-3.5" style={{ color: ORANGE }} />
+                  <FiZap className="w-3.5 h-3.5 animate-gentle-pulse" style={{ color: ORANGE }} />
                 </div>
                 <h3 className="text-sm font-semibold" style={{ color: NAVY }}>
                   Finish your profile

@@ -159,14 +159,14 @@ export default function StudentProfile() {
 
     (async () => {
       try {
-        const [standardsRes, profilesRes] = await Promise.all([
+        const [standardsRes, myProfileRes] = await Promise.all([
           mentorService.getQualifications(),
-          studentService.getProfiles(),
+          studentService.getMyProfile(),
         ]);
         if (cancelled) return;
         setStandardOptions(standardsRes);
 
-        const existing = profilesRes[0] ?? null;
+        const { profile: existing, basicUser } = myProfileRes;
         setExistingProfile(existing);
         if (existing) {
           if (existing.user?.name) setEmail(existing.user.name);
@@ -181,6 +181,10 @@ export default function StudentProfile() {
           setCountry(existing.country || "India");
           setStandardId(existing.standard?.id);
           if (existing.profile_pic) setPhotoUrl(existing.profile_pic);
+        } else if (basicUser) {
+          if (basicUser.first_name) setFirstName(basicUser.first_name);
+          if (basicUser.last_name) setLastName(basicUser.last_name);
+          if (basicUser.email) setEmail(basicUser.email);
         }
       } catch {
         if (!cancelled) setOptionsError("Couldn't load form options. Please refresh the page.");
