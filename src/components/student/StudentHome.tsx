@@ -8,6 +8,7 @@ import {
   AiOutlineBell,
   AiOutlineClose,
   AiOutlineFilter,
+  AiOutlineCheckCircle,
 } from "react-icons/ai";
 import {
   BsHeart,
@@ -17,14 +18,30 @@ import {
   BsStarFill,
   BsStar,
 } from "react-icons/bs";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiZap, FiChevronRight } from "react-icons/fi";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
-import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
+import studentService, { StudentProfileRecord } from "@/services/student.service";
+import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory, getInitials } from "@/utils/teacherDisplay";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
+const ORANGE_BG = "#FFF3EC";
+const ORANGE_BORDER = "#F8C9A8";
+
+function computeStudentCompletion(p: StudentProfileRecord | null): number {
+  if (!p) return 0;
+  const items = [
+    !!p.profile_pic,
+    !!p.gender,
+    p.about.trim().length > 30,
+    !!p.standard,
+    !!p.temp_address?.trim() && !!p.permanent_address?.trim(),
+    !!p.city?.trim() && !!p.state?.trim() && !!p.country?.trim(),
+  ];
+  return Math.round((items.filter(Boolean).length / items.length) * 100);
+}
 
 const EXP_BUCKETS = [
   { label: "0–2 years", min: 0, max: 2 },
@@ -241,6 +258,8 @@ export default function StudentHome() {
   const [likeError, setLikeError] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
+  const [myProfile, setMyProfile] = useState<StudentProfileRecord | null>(null);
+  const [myProfileLoading, setMyProfileLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -258,6 +277,25 @@ export default function StudentHome() {
         if (!cancelled) setLoadError("Couldn't load tutors. Please refresh the page.");
       } finally {
         if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const myProfiles = await studentService.getProfiles();
+        if (!cancelled) setMyProfile(myProfiles[0] ?? null);
+      } catch {
+        if (!cancelled) setMyProfile(null);
+      } finally {
+        if (!cancelled) setMyProfileLoading(false);
       }
     })();
 
@@ -510,12 +548,14 @@ export default function StudentHome() {
             <button className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
               <AiOutlineBell className="w-4.5 h-4.5" />
             </button>
-            <div
+            <Link
+              href="/profile"
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
               style={{ background: NAVY }}
+              title="My Profile"
             >
               S
-            </div>
+            </Link>
             <button
               onClick={() => AuthService.logout()}
               className="hidden sm:flex px-3 py-2 rounded-xl text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-all"
@@ -660,6 +700,111 @@ export default function StudentHome() {
             </div>
           )}
         </div>
+
+        {/* ── Right sidebar: your profile ── */}
+        <aside className="hidden xl:flex flex-col w-72 shrink-0 sticky top-24 self-start gap-4">
+          <div className="bg-white border border-gray-100 rounded-2xl p-5">
+            {myProfileLoading ? (
+              <div className="text-xs text-gray-400 text-center py-6">Loading your profile…</div>
+            ) : (
+              <>
+                <div className="flex flex-col items-center text-center mb-4">
+                  <div className="relative mb-3">
+                    {myProfile?.profile_pic ? (
+                      <img
+                        src={myProfile.profile_pic}
+                        alt="Your profile"
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                        style={{ background: NAVY }}
+                      >
+                        {getInitials(myProfile?.user?.name || "Student")}
+                      </div>
+                    )}
+                    <svg className="absolute -inset-1.5 w-19 h-19 -rotate-90" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="46" fill="none" stroke="#F3F4F6" strokeWidth="6" />
+                      <circle
+                        cx="50" cy="50" r="46" fill="none"
+                        stroke={computeStudentCompletion(myProfile) >= 80 ? "#16A34A" : ORANGE}
+                        strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray={`${(2 * Math.PI * 46 * computeStudentCompletion(myProfile)) / 100} ${2 * Math.PI * 46}`}
+                        style={{ transition: "stroke-dasharray 0.5s ease" }}
+                      />
+                    </svg>
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900 truncate max-w-full">
+                    {myProfile?.user?.name || "Your Profile"}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {myProfile?.standard?.name || "Add your class / qualification"}
+                  </div>
+                  {myProfile?.looking_for_mentor && (
+                    <span
+                      className="mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: ORANGE_BG, color: ORANGE }}
+                    >
+                      Looking for a mentor
+                    </span>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] text-gray-500">Profile strength</span>
+                    <span className="text-[10px] font-semibold" style={{ color: ORANGE }}>
+                      {computeStudentCompletion(myProfile)}%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full">
+                    <div
+                      className="h-1.5 rounded-full transition-all"
+                      style={{ width: `${computeStudentCompletion(myProfile)}%`, background: ORANGE }}
+                    />
+                  </div>
+                </div>
+
+                <Link
+                  href="/profile"
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                  style={{ background: ORANGE }}
+                >
+                  {myProfile ? "Edit Profile" : "Complete Profile"}
+                  <FiChevronRight className="w-4 h-4" />
+                </Link>
+              </>
+            )}
+          </div>
+
+          {myProfile && computeStudentCompletion(myProfile) < 100 && (
+            <div className="bg-white border border-gray-100 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: ORANGE_BG }}
+                >
+                  <FiZap className="w-3.5 h-3.5" style={{ color: ORANGE }} />
+                </div>
+                <h3 className="text-sm font-semibold" style={{ color: NAVY }}>
+                  Finish your profile
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed mb-3">
+                A complete profile helps tutors understand what you&apos;re looking for and respond faster.
+              </p>
+              <Link
+                href="/profile"
+                className="text-xs font-semibold inline-flex items-center gap-1 hover:underline"
+                style={{ color: ORANGE }}
+              >
+                <AiOutlineCheckCircle className="w-3.5 h-3.5" />
+                Complete now
+              </Link>
+            </div>
+          )}
+        </aside>
       </div>
 
       {ct && (
