@@ -223,7 +223,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     setLiking(true);
     setLikeError(null);
     try {
-      await mentorService.toggleLike(teacherId);
+      await mentorService.toggleLike(teacherId, !!teacher?.isLiked);
       await refreshProfiles();
     } catch (err) {
       setLikeError(err instanceof Error ? err.message : "Couldn't update like.");

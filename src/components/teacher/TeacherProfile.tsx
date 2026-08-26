@@ -206,6 +206,7 @@ function Stars({ n }: { n: number }) {
 export default function TeacherProfile() {
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const idProofInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -213,6 +214,8 @@ export default function TeacherProfile() {
   /* Basic identity (display only — not part of the mentor profile payload) */
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string>("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [firstName, setFirstName] = useState("Teacher");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("teacher@example.com");
@@ -266,7 +269,9 @@ export default function TeacherProfile() {
         const { profile: existing, basicUser } = myProfileRes;
         setExistingProfile(existing);
         if (existing) {
-          if (existing.user?.name) setEmail(existing.user.name);
+          if (existing.user?.email) setEmail(existing.user.email);
+          if (existing.user?.first_name) setFirstName(existing.user.first_name);
+          if (existing.user?.last_name) setLastName(existing.user.last_name);
           setGender(existing.gender || "");
           setDob(existing.date_of_birth || "");
           setTotalExperience(
@@ -283,6 +288,7 @@ export default function TeacherProfile() {
           setQualificationIds(existing.highest_qualification);
           setIdentityDocId(existing.identity_verification_name?.id);
           if (existing.profile_pic) setPhotoUrl(existing.profile_pic);
+          if (existing.banner) setBannerUrl(existing.banner);
           if (existing.identity_verification) setExistingIdentityFileUrl(existing.identity_verification);
         } else if (basicUser) {
           if (basicUser.first_name) setFirstName(basicUser.first_name);
@@ -335,6 +341,13 @@ export default function TeacherProfile() {
     setPhotoUrl(URL.createObjectURL(file));
   }
 
+  function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerFile(file);
+    setBannerUrl(URL.createObjectURL(file));
+  }
+
   function handleIdProofChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -370,6 +383,7 @@ export default function TeacherProfile() {
     try {
       const payload = {
         profile_pic: photoFile ?? undefined,
+        banner: bannerFile ?? undefined,
         gender,
         date_of_birth: dob,
         temp_address: tempAddress,
@@ -496,6 +510,34 @@ export default function TeacherProfile() {
 
           {/* ── Main form column ── */}
           <div className="flex-1 min-w-0 flex flex-col gap-5">
+
+            {/* ── Cover Photo / Banner ── */}
+            <div className="group relative h-36 sm:h-44 rounded-2xl overflow-hidden bg-white border border-gray-100">
+              {bannerUrl ? (
+                <img src={bannerUrl} alt="Cover" className="w-full h-full object-cover" />
+              ) : (
+                <div
+                  className="w-full h-full"
+                  style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #1A2F5E 55%, ${ORANGE} 160%)` }}
+                />
+              )}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 backdrop-blur text-gray-700 shadow-sm hover:bg-white transition-all"
+              >
+                <AiOutlineCamera className="w-3.5 h-3.5" />
+                {bannerUrl ? "Change cover" : "Add cover photo"}
+              </button>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerChange}
+              />
+            </div>
 
             {/* ── Photo & Basic Info ── */}
             <SectionCard icon={<AiOutlineUser className="w-4 h-4" />} title="Photo & Basic Info">

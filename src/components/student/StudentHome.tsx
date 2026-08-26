@@ -148,22 +148,25 @@ function TeacherCard({
   onContact: () => void;
   index?: number;
 }) {
+  const [imgBroken, setImgBroken] = useState(false);
+
   return (
     <div
-      className="group bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 animate-fade-in-up"
+      className="group bg-white border border-gray-100 rounded-2xl p-4 hover:border-orange-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 animate-fade-in-up"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         {/* Avatar */}
-        {t.photoUrl ? (
+        {t.photoUrl && !imgBroken ? (
           <img
             src={t.photoUrl}
             alt={t.name}
-            className="w-14 h-14 rounded-2xl object-cover shrink-0 transition-transform duration-200 group-hover:scale-105"
+            onError={() => setImgBroken(true)}
+            className="w-12 h-12 rounded-xl object-cover shrink-0 transition-transform duration-200 group-hover:scale-105"
           />
         ) : (
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0 transition-transform duration-200 group-hover:scale-105"
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold shrink-0 transition-transform duration-200 group-hover:scale-105"
             style={{ background: t.bg, color: t.color }}
           >
             {t.initials}
@@ -176,10 +179,10 @@ function TeacherCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-semibold text-gray-900">{t.name}</h3>
+                <h3 className="text-sm font-semibold text-gray-900">{t.name}</h3>
                 <ModeBadge verified={t.verified} />
               </div>
-              <div className="text-sm text-gray-500 mt-0.5 truncate">
+              <div className="text-xs text-gray-500 mt-0.5 truncate">
                 {t.expertise || "Tutor"} &nbsp;·&nbsp; {formatExperience(t.experienceYears)}
               </div>
             </div>
@@ -187,18 +190,18 @@ function TeacherCard({
             <button
               onClick={onToggleLike}
               disabled={liking}
-              className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all shrink-0 disabled:opacity-50"
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all shrink-0 disabled:opacity-50"
             >
               {t.isLiked ? (
-                <BsHeartFill className="w-4 h-4 text-red-500 animate-heart-pop" />
+                <BsHeartFill className="w-3.5 h-3.5 text-red-500 animate-heart-pop" />
               ) : (
-                <BsHeart className="w-4 h-4" />
+                <BsHeart className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
 
           {/* Row 2: Rating + location */}
-          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5">
             <StarRating rating={t.rating} reviewCount={t.reviewCount} />
             <span className="text-gray-200 hidden sm:block">|</span>
             <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -209,16 +212,16 @@ function TeacherCard({
 
           {/* Row 3: About */}
           {t.about && (
-            <p className="text-sm text-gray-500 mt-2.5 line-clamp-2 leading-relaxed">{t.about}</p>
+            <p className="text-xs text-gray-500 mt-2 line-clamp-1 leading-relaxed">{t.about}</p>
           )}
 
           {/* Row 4: Courses */}
           {t.courses.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
+            <div className="flex flex-wrap gap-1.5 mt-2">
               {t.courses.map((c) => (
                 <span
                   key={c}
-                  className="text-xs bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full border border-gray-100"
+                  className="text-[11px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full border border-gray-100"
                 >
                   {c}
                 </span>
@@ -227,16 +230,16 @@ function TeacherCard({
           )}
 
           {/* Row 5: CTAs */}
-          <div className="flex items-center justify-end mt-3.5 pt-3.5 border-t border-gray-100 gap-2">
+          <div className="flex items-center justify-end mt-3 pt-2.5 border-t border-gray-100 gap-2">
             <Link
               href={`/teacher/${t.id}`}
-              className="px-4 py-1.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+              className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
             >
               View Profile
             </Link>
             <button
               onClick={onContact}
-              className="px-4 py-1.5 text-sm font-semibold rounded-xl text-white transition-all hover:opacity-90"
+              className="px-3.5 py-1 text-xs font-semibold rounded-lg text-white transition-all hover:opacity-90"
               style={{ background: ORANGE }}
             >
               Contact
@@ -326,11 +329,11 @@ export default function StudentHome() {
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
     );
   }
-  async function handleToggleLike(id: number) {
+  async function handleToggleLike(id: number, isLiked: boolean) {
     setLikingId(id);
     setLikeError(null);
     try {
-      await mentorService.toggleLike(id);
+      await mentorService.toggleLike(id, isLiked);
       const refreshed = await mentorService.getAllProfiles();
       setProfiles(refreshed);
     } catch {
@@ -670,13 +673,13 @@ export default function StudentHome() {
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="bg-white border border-gray-100 rounded-2xl p-5 animate-fade-in-up"
+                  className="bg-white border border-gray-100 rounded-2xl p-4 animate-fade-in-up"
                   style={{ animationDelay: `${i * 80}ms` }}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-2xl shrink-0 animate-shimmer" />
-                    <div className="flex-1 min-w-0 flex flex-col gap-2.5">
-                      <div className="h-4 w-1/3 rounded-full animate-shimmer" />
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-xl shrink-0 animate-shimmer" />
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      <div className="h-3.5 w-1/3 rounded-full animate-shimmer" />
                       <div className="h-3 w-1/2 rounded-full animate-shimmer" />
                       <div className="h-3 w-2/3 rounded-full animate-shimmer" />
                     </div>
@@ -710,7 +713,7 @@ export default function StudentHome() {
                 t={t}
                 index={i}
                 liking={likingId === t.id}
-                onToggleLike={() => handleToggleLike(t.id)}
+                onToggleLike={() => handleToggleLike(t.id, t.isLiked)}
                 onContact={() => setContactTeacher(t)}
               />
             ))

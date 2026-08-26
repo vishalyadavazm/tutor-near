@@ -40,6 +40,7 @@ export interface MentorProfileRecord {
   created_t: string;
   modified_t: string;
   profile_pic: string | null;
+  banner: string | null;
   gender: string;
   date_of_birth: string;
   identity_verification: string | null;
@@ -53,7 +54,7 @@ export interface MentorProfileRecord {
   about: string;
   created_by: MentorProfileUserRef | null;
   modified_by: MentorProfileUserRef | null;
-  user: MentorProfileUserRef;
+  user: MentorProfileBasicUser;
   identity_verification_name: DocumentNameOption | null;
   courses_can_teach: CourseOption[];
   highest_qualification: number[];
@@ -108,6 +109,7 @@ export interface MentorDirectoryEntry {
 
 export interface MentorProfilePayload {
   profile_pic?: File;
+  banner?: File;
   gender: string;
   date_of_birth: string;
   temp_address: string;
@@ -186,6 +188,9 @@ class MentorService {
     if (payload.profile_pic) {
       formData.append("profile_pic", payload.profile_pic);
     }
+    if (payload.banner) {
+      formData.append("banner", payload.banner);
+    }
     formData.append("gender", payload.gender);
     formData.append("date_of_birth", payload.date_of_birth);
     formData.append("temp_address", payload.temp_address);
@@ -229,9 +234,11 @@ class MentorService {
     }
   }
 
-  async toggleLike(mentorId: number) {
+  async toggleLike(mentorId: number, isLiked: boolean) {
     try {
-      const res = await api.post(API.MENTOR_LIKE, { mentor: mentorId });
+      const res = isLiked
+        ? await api.delete(API.MENTOR_LIKE, { data: { mentor: mentorId } })
+        : await api.post(API.MENTOR_LIKE, { mentor: mentorId });
       return res.data;
     } catch (error) {
       throw new Error(extractErrorMessage(error, "Unable to update like."));

@@ -357,7 +357,10 @@ export default function TeacherDashboard() {
     () => computeProfileCompletion(myProfile),
     [myProfile],
   );
-  const displayName = myProfile?.user?.name || "Teacher";
+  const displayName =
+    [myProfile?.user?.first_name, myProfile?.user?.last_name].filter(Boolean).join(" ") ||
+    myProfile?.user?.email ||
+    "Teacher";
   const displayInitials = myProfile ? getInitials(displayName) : "T";
   const isVerified = !!myProfile?.identity_verification_name;
 

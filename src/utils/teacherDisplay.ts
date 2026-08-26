@@ -57,7 +57,7 @@ export function toDisplayTeacher(
   p: MentorProfileRecord,
   qualificationNamesById: Record<number, string> = {},
 ): DisplayTeacher {
-  const name = p.user?.name || "Tutor";
+  const name = [p.user?.first_name, p.user?.last_name].filter(Boolean).join(" ") || p.user?.email || "Tutor";
   const { bg, color } = getAvatarColors(p.id);
   return {
     id: p.id,
