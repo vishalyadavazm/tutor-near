@@ -11,6 +11,7 @@ import {
   AiOutlineSearch,
   AiOutlineClose,
   AiOutlineBell,
+  AiOutlineCheckCircle,
 } from "react-icons/ai";
 import { BsShieldCheck, BsHeart, BsHeartFill, BsStarFill, BsStar } from "react-icons/bs";
 import { FiBookOpen } from "react-icons/fi";
@@ -56,9 +57,18 @@ function RateWidget({
 }) {
   const [hoverValue, setHoverValue] = useState(0);
 
+  if (isRated) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AiOutlineCheckCircle className="w-3.5 h-3.5 text-green-500" />
+        <span className="text-xs text-gray-500">You&apos;ve already rated this tutor</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-gray-500">{isRated ? "Update your rating:" : "Rate this tutor:"}</span>
+      <span className="text-xs text-gray-500">Rate this tutor:</span>
       <div className="flex items-center gap-0.5" onMouseLeave={() => setHoverValue(0)}>
         {[1, 2, 3, 4, 5].map((i) => (
           <button
