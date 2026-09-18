@@ -1,62 +1,26 @@
 "use client";
 
-/**
- * Updated to match the homepage palette:
- *   Navy: #15213D   Red: #C0392B   Peach: #FBE7E0   Lavender: #EEF1FB
- *
- * Field order changed: Full Name → Email → Phone → Password → Confirm
- * Password → Account type (cards) → Submit. All fields are visible at once;
- * account type is still required, but it's now validated on submit instead
- * of hiding the form until it's picked.
- */
-
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import clsx from "clsx";
 import {
   AiOutlineUser,
   AiOutlineMail,
-  AiOutlineExclamationCircle,
 } from "react-icons/ai";
 import { FaGraduationCap, FaChalkboardTeacher } from "react-icons/fa";
 import PasswordInput from "./PasswordInput";
 import OTPInput from "./OTPInput";
 import { studentRegisterSchema, StudentRegisterData } from "@/lib/validations";
 import AuthService from "@/services/auth.service";
-const NAVY = "#15213D";
-const RED = "#C0392B";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import FieldError from "@/components/ui/FieldError";
 
 type UserType = "student" | "teacher";
 type Step = "form" | "otp";
-
-function FieldError({ msg }: { msg?: string }) {
-  if (!msg) return null;
-  return (
-    <p className="text-xs text-red-500 flex items-center gap-1">
-      <svg
-        className="w-3.5 h-3.5 shrink-0"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path
-          fillRule="evenodd"
-          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-          clipRule="evenodd"
-        />
-      </svg>
-      {msg}
-    </p>
-  );
-}
-
-function inputCls(error?: string) {
-  return `w-full pl-10 pr-4 py-2.5 text-sm text-gray-900 border rounded-lg outline-none transition-all duration-150
-    placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
-    ${error ? "border-red-400 bg-red-50 focus:ring-red-500/20 focus:border-red-400" : "border-gray-200 hover:border-gray-300"}`;
-}
 
 // ── Account type option card ────────────────────────────────────
 function TypeCard({
@@ -78,19 +42,21 @@ function TypeCard({
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 rounded-xl border-2 p-4 text-left transition-all duration-150 flex items-center justify-between gap-3"
-      style={
+      className={clsx(
+        "flex-1 rounded-xl border-2 p-4 text-left transition-all duration-150 flex items-center justify-between gap-3",
         selected
-          ? { borderColor: RED, background: "#FBE7E0" }
+          ? "border-brand-red bg-brand-peach"
           : hasError
-            ? { borderColor: "#F87171", background: "white" }
-            : { borderColor: "#E5E7EB", background: "white" }
-      }
+            ? "border-red-400 bg-white"
+            : "border-gray-200 bg-white",
+      )}
     >
       <div>
         <p
-          className="text-sm font-bold"
-          style={{ color: selected ? RED : NAVY }}
+          className={clsx(
+            "text-sm font-bold",
+            selected ? "text-brand-red" : "text-brand-navy",
+          )}
         >
           {title}
         </p>
@@ -99,11 +65,10 @@ function TypeCard({
         </p>
       </div>
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg"
-        style={{
-          background: selected ? "#F6D6CB" : "#F3F4F6",
-          color: selected ? RED : "#9CA3AF",
-        }}
+        className={clsx(
+          "w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg",
+          selected ? "bg-brand-peach text-brand-red" : "bg-gray-100 text-gray-400",
+        )}
       >
         {icon}
       </div>
@@ -183,13 +148,9 @@ function OTPScreen({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center"
-        style={{ background: "#FBE7E0" }}
-      >
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-brand-peach">
         <svg
-          className="w-8 h-8"
-          style={{ color: RED }}
+          className="w-8 h-8 text-brand-red"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -206,57 +167,27 @@ function OTPScreen({
       <div className="text-center">
         <p className="text-sm text-gray-500">
           We sent a 6-digit code to{" "}
-          <span className="font-semibold" style={{ color: NAVY }}>
-            {email}
-          </span>
+          <span className="font-semibold text-brand-navy">{email}</span>
         </p>
       </div>
 
       <OTPInput value={otp} onChange={setOtp} error={otpError} />
 
-      <button
+      <Button
         onClick={handleVerify}
-        disabled={isVerifying || otp.length < 6}
-        className="w-full py-3 text-white text-sm font-semibold rounded-xl
-          transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-          flex items-center justify-center gap-2 shadow-sm hover:opacity-90"
-        style={{ background: RED }}
+        disabled={otp.length < 6}
+        loading={isVerifying}
+        loadingText="Verifying…"
       >
-        {isVerifying ? (
-          <>
-            <svg
-              className="w-4 h-4 animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
-            Verifying…
-          </>
-        ) : (
-          "Verify OTP"
-        )}
-      </button>
+        Verify OTP
+      </Button>
 
       <p className="text-sm text-gray-500">
         Didn&apos;t receive the code?{" "}
         {canResend ? (
           <button
             onClick={handleResend}
-            className="font-semibold hover:underline"
-            style={{ color: RED }}
+            className="font-semibold text-brand-red hover:underline"
           >
             Resend OTP
           </button>
@@ -360,10 +291,7 @@ export default function RegisterForm() {
     return (
       <div>
         <div className="mb-6">
-          <h2
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: NAVY }}
-          >
+          <h2 className="text-2xl font-bold tracking-tight text-brand-navy">
             Verify your email
           </h2>
           <p className="text-gray-500 text-sm mt-1">
@@ -383,10 +311,7 @@ export default function RegisterForm() {
   return (
     <div>
       <div className="mb-6">
-        <h2
-          className="text-2xl font-bold tracking-tight"
-          style={{ color: NAVY }}
-        >
+        <h2 className="text-2xl font-bold tracking-tight text-brand-navy">
           Create your account
         </h2>
         <p className="text-gray-500 text-sm mt-1">
@@ -401,56 +326,31 @@ export default function RegisterForm() {
       >
         {/* First / Last Name */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              First Name
-            </label>
-            <div className="relative">
-              <AiOutlineUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4.5 h-4.5" />
-              <input
-                type="text"
-                placeholder="Rahul"
-                {...register("firstName")}
-                className={inputCls(errors.firstName?.message)}
-              />
-            </div>
-            <FieldError msg={errors.firstName?.message} />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Last Name
-            </label>
-            <div className="relative">
-              <AiOutlineUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4.5 h-4.5" />
-              <input
-                type="text"
-                placeholder="Verma"
-                {...register("lastName")}
-                className={inputCls(errors.lastName?.message)}
-              />
-            </div>
-            <FieldError msg={errors.lastName?.message} />
-          </div>
+          <Input
+            label="First Name"
+            placeholder="Rahul"
+            icon={<AiOutlineUser className="w-4.5 h-4.5" />}
+            error={errors.firstName?.message}
+            {...register("firstName")}
+          />
+          <Input
+            label="Last Name"
+            placeholder="Verma"
+            icon={<AiOutlineUser className="w-4.5 h-4.5" />}
+            error={errors.lastName?.message}
+            {...register("lastName")}
+          />
         </div>
 
-        {/* Email */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
-            Email address
-          </label>
-          <div className="relative">
-            <AiOutlineMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4.5 h-4.5" />
-            <input
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              {...register("email")}
-              className={inputCls(errors.email?.message)}
-            />
-          </div>
-          <FieldError msg={errors.email?.message} />
-        </div>
+        <Input
+          label="Email address"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          icon={<AiOutlineMail className="w-4.5 h-4.5" />}
+          error={errors.email?.message}
+          {...register("email")}
+        />
 
         {/* Phone */}
         <div className="flex flex-col gap-1.5">
@@ -466,12 +366,16 @@ export default function RegisterForm() {
               placeholder="9876543210"
               maxLength={10}
               {...register("phone")}
-              className={`flex-1 pr-4 py-2.5 text-sm text-gray-900 border rounded-r-lg outline-none transition-all duration-150
-                placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
-                ${errors.phone ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
+              className={clsx(
+                "flex-1 pr-4 py-2.5 text-sm text-gray-900 border rounded-r-lg outline-none transition-all duration-150",
+                "placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red",
+                errors.phone
+                  ? "border-red-400 bg-red-50"
+                  : "border-gray-200 hover:border-gray-300",
+              )}
             />
           </div>
-          <FieldError msg={errors.phone?.message} />
+          <FieldError message={errors.phone?.message} />
         </div>
 
         {/* Password */}
@@ -496,7 +400,7 @@ export default function RegisterForm() {
         {/* Account type — now appears after Confirm Password */}
         <div id="account-type-section" className="flex flex-col gap-1.5 mt-1">
           <label className="text-sm font-medium text-gray-700">
-            I am registering as <span style={{ color: RED }}>*</span>
+            I am registering as <span className="text-brand-red">*</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <TypeCard
@@ -523,7 +427,7 @@ export default function RegisterForm() {
             />
           </div>
           {typeError && (
-            <FieldError msg="Please select an account type to continue" />
+            <FieldError message="Please select an account type to continue" />
           )}
         </div>
 
@@ -533,50 +437,19 @@ export default function RegisterForm() {
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
-          disabled={isLoading}
-          className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
-            transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-            flex items-center justify-center gap-2 shadow-sm hover:opacity-90"
-          style={{ background: RED }}
+          loading={isLoading}
+          loadingText="Creating account…"
+          className="mt-1"
         >
-          {isLoading ? (
-            <>
-              <svg
-                className="w-4 h-4 animate-spin"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-              Creating account…
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </button>
+          Create Account
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
         Already have an account?{" "}
-        <Link
-          href="/login"
-          className="font-semibold hover:underline"
-          style={{ color: RED }}
-        >
+        <Link href="/login" className="font-semibold text-brand-red hover:underline">
           Sign in
         </Link>
       </p>

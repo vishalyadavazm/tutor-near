@@ -1,12 +1,7 @@
 "use client";
 
-
 import React from "react";
 import Link from "next/link";
-
-const NAVY = "#15213D";
-const RED = "#C0392B";
-const MUTED = "#9FA9C4";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -18,7 +13,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       {/* ── Left: Branding Panel ── */}
       <div
         className="hidden lg:flex lg:w-[45%] xl:w-[42%] flex-col justify-between relative overflow-hidden px-12 py-10"
-        style={{ background: `linear-gradient(160deg, #1B2A4D 0%, ${NAVY} 55%, #0F1830 100%)` }}
+        style={{ background: "linear-gradient(160deg, #1B2A4D 0%, var(--brand-navy) 55%, #0F1830 100%)" }}
       >
         {/* Decorative blobs */}
         <div className="absolute top-[-80px] right-[-80px] w-72 h-72 rounded-full bg-white/5 pointer-events-none" />
@@ -47,12 +42,12 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                   </div>
                   <div>
                     <p className="text-white font-semibold text-sm">Priya Sharma</p>
-                    <p className="text-xs" style={{ color: MUTED }}>Mathematics · 8 yrs exp</p>
+                    <p className="text-xs text-brand-muted">Mathematics · 8 yrs exp</p>
                     <div className="flex items-center gap-1 mt-1">
                       {[1,2,3,4,5].map(i => (
                         <svg key={i} className="w-3 h-3" style={{ fill: "#F2B705" }} viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                       ))}
-                      <span className="text-xs ml-1" style={{ color: MUTED }}>4.9</span>
+                      <span className="text-xs ml-1 text-brand-muted">4.9</span>
                     </div>
                   </div>
                   <div className="ml-auto">
@@ -64,7 +59,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                     <span key={t} className="text-xs bg-white/15 text-white/90 px-2.5 py-1 rounded-full">{t}</span>
                   ))}
                 </div>
-                <div className="mt-4 flex items-center justify-between text-xs" style={{ color: MUTED }}>
+                <div className="mt-4 flex items-center justify-between text-xs text-brand-muted">
                   <span className="flex items-center gap-1">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     Kanpur, UP · 2.1 km
@@ -85,9 +80,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div>
             <h1 className="text-white text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
               Find the Best Teachers<br />
-              <span style={{ color: RED }}>Near You</span>
+              <span className="text-brand-red">Near You</span>
             </h1>
-            <p className="mt-3 text-base leading-relaxed max-w-xs" style={{ color: MUTED }}>
+            <p className="mt-3 text-base leading-relaxed max-w-xs text-brand-muted">
               Connect with trusted, verified tutors for every subject — from JEE prep to creative arts.
             </p>
           </div>
@@ -101,14 +96,14 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             ].map(s => (
               <div key={s.label}>
                 <p className="text-white text-xl font-bold">{s.value}</p>
-                <p className="text-xs mt-0.5" style={{ color: MUTED }}>{s.label}</p>
+                <p className="text-xs mt-0.5 text-brand-muted">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Footer */}
-        <p className="relative z-10 text-xs" style={{ color: `${MUTED}99` }}>
+        <p className="relative z-10 text-xs text-brand-muted/60">
           © {new Date().getFullYear()} TutorNear · Trusted by families across India
         </p>
       </div>
@@ -117,7 +112,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       <div className="flex-1 flex flex-col">
         {/* Mobile top bar — matches home page navbar exactly */}
         <div className="lg:hidden flex items-center justify-between px-5 h-16 border-b border-gray-100">
-          <Link href="/" className="text-lg font-bold" style={{ color: NAVY }}>
+          <Link href="/" className="text-lg font-bold text-brand-navy">
             TutorNear
           </Link>
           <div className="flex items-center gap-5">
@@ -126,8 +121,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             </Link>
             <Link
               href="/register"
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: RED }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red transition-opacity hover:opacity-90"
             >
               Register
             </Link>

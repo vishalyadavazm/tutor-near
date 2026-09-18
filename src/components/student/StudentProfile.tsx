@@ -71,11 +71,13 @@ function Field({
   label,
   required,
   hint,
+  error,
   children,
 }: {
   label: string;
   required?: boolean;
   hint?: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -85,7 +87,20 @@ function Field({
         {required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-gray-400">{hint}</p>}
+      {error ? (
+        <p className="text-[11px] text-red-500 flex items-center gap-1">
+          <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {error}
+        </p>
+      ) : (
+        hint && <p className="text-[11px] text-gray-400">{hint}</p>
+      )}
     </div>
   );
 }
@@ -94,6 +109,12 @@ const inputCls =
   "w-full px-3.5 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-xl outline-none bg-white placeholder:text-gray-400 hover:border-gray-300 focus:border-orange-400 focus:ring-2 transition-all";
 
 const inputFocusStyle = { "--tw-ring-color": `${ORANGE}30` } as React.CSSProperties;
+
+function fieldStyle(hasError?: boolean): React.CSSProperties {
+  return hasError
+    ? { ...inputFocusStyle, borderColor: "#F87171", backgroundColor: "#FEF2F2" }
+    : inputFocusStyle;
+}
 
 /* ─── Completion helper ─────────────────────────────── */
 function calcCompletion(f: {
@@ -125,6 +146,7 @@ export default function StudentProfile() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   /* Basic identity (display only — not part of the student profile payload) */
   const [photoUrl, setPhotoUrl] = useState<string>("");
@@ -216,6 +238,23 @@ export default function StudentProfile() {
   });
   const initials = `${firstName[0] ?? "S"}${lastName[0] ?? ""}`.toUpperCase();
 
+  const genderError = showErrors && !gender ? "Please select your gender" : undefined;
+  const aboutError =
+    showErrors && about.trim().length <= 30
+      ? "Please write at least 30 characters"
+      : undefined;
+  const tempAddressError =
+    showErrors && !tempAddress.trim() ? "Temporary address is required" : undefined;
+  const permanentAddressError =
+    showErrors && !permanentAddress.trim() ? "Permanent address is required" : undefined;
+  const cityError = showErrors && !city.trim() ? "City is required" : undefined;
+  const stateError = showErrors && !stateName.trim() ? "State is required" : undefined;
+  const countryError = showErrors && !country.trim() ? "Country is required" : undefined;
+  const standardError =
+    showErrors && standardId === undefined
+      ? "Please select your current class or qualification"
+      : undefined;
+
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -236,10 +275,12 @@ export default function StudentProfile() {
       !country.trim() ||
       standardId === undefined
     ) {
+      setShowErrors(true);
       setSaveError("Please fill in all required fields before saving.");
       return;
     }
 
+    setShowErrors(false);
     setSaving(true);
     try {
       const payload = {
@@ -453,9 +494,10 @@ export default function StudentProfile() {
             {/* ── Personal Details ── */}
             <SectionCard icon={<AiOutlineCalendar className="w-4 h-4" />} title="Personal Details">
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Gender" required>
+                <Field label="Gender" required error={genderError}>
                   <select
                     className={inputCls}
+                    style={fieldStyle(!!genderError)}
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                   >
@@ -483,10 +525,11 @@ export default function StudentProfile() {
                 label="Bio / About"
                 required
                 hint="Describe what you're studying and what kind of help you're looking for."
+                error={aboutError}
               >
                 <textarea
                   className={`${inputCls} resize-none`}
-                  style={inputFocusStyle}
+                  style={fieldStyle(!!aboutError)}
                   rows={5}
                   value={about}
                   onChange={(e) => setAbout(e.target.value.slice(0, 600))}
@@ -525,19 +568,19 @@ export default function StudentProfile() {
             {/* ── Location ── */}
             <SectionCard icon={<AiOutlineEnvironment className="w-4 h-4" />} title="Location">
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <Field label="Temporary Address" required>
+                <Field label="Temporary Address" required error={tempAddressError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!tempAddressError)}
                     value={tempAddress}
                     onChange={(e) => setTempAddress(e.target.value)}
                     placeholder="e.g. Delhi 6"
                   />
                 </Field>
-                <Field label="Permanent Address" required>
+                <Field label="Permanent Address" required error={permanentAddressError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!permanentAddressError)}
                     value={permanentAddress}
                     onChange={(e) => setPermanentAddress(e.target.value)}
                     placeholder="e.g. Mumbai Bandra"
@@ -545,28 +588,28 @@ export default function StudentProfile() {
                 </Field>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <Field label="City" required>
+                <Field label="City" required error={cityError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!cityError)}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="e.g. Delhi"
                   />
                 </Field>
-                <Field label="State" required>
+                <Field label="State" required error={stateError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!stateError)}
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
                     placeholder="e.g. Delhi"
                   />
                 </Field>
-                <Field label="Country" required>
+                <Field label="Country" required error={countryError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!countryError)}
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     placeholder="e.g. India"
@@ -577,9 +620,10 @@ export default function StudentProfile() {
 
             {/* ── Class / Qualification ── */}
             <SectionCard icon={<MdOutlineSchool className="w-4 h-4" />} title="Class / Qualification">
-              <Field label="Current class or qualification" required>
+              <Field label="Current class or qualification" required error={standardError}>
                 <select
                   className={inputCls}
+                  style={fieldStyle(!!standardError)}
                   value={standardId ?? ""}
                   onChange={(e) => setStandardId(e.target.value ? Number(e.target.value) : undefined)}
                   disabled={loadingOptions}

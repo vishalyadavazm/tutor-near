@@ -567,7 +567,7 @@ export default function TeacherDashboard() {
           </div>
 
           {/* ── Profile Completion Section ── */}
-          {!bannerDismissed && !profileLoading && (
+          {!bannerDismissed && !profileLoading && completionPct < 100 && (
             <div
               className="rounded-2xl border overflow-hidden"
               style={{ borderColor: ORANGE_BORDER }}

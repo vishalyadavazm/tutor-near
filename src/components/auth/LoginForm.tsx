@@ -1,13 +1,7 @@
 "use client";
 
-/**
- * Updated to match the homepage palette:
- *   Navy: #15213D   Red: #C0392B
- */
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -17,9 +11,8 @@ import OTPLogin from "./OTPLogin";
 import { loginSchema, LoginFormData } from "@/lib/validations";
 import AuthService, { extractRole } from "@/services/auth.service";
 import { saveRole, redirectByRole } from "@/utils/auth";
-
-const NAVY = "#15213D";
-const RED = "#C0392B";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 type Tab = "password" | "otp";
 
@@ -53,10 +46,7 @@ export default function LoginForm() {
   return (
     <div>
       <div className="mb-7">
-        <h2
-          className="text-2xl font-bold tracking-tight"
-          style={{ color: NAVY }}
-        >
+        <h2 className="text-2xl font-bold tracking-tight text-brand-navy">
           Welcome back
         </h2>
         <p className="text-gray-500 text-sm mt-1">
@@ -73,10 +63,9 @@ export default function LoginForm() {
             onClick={() => setTab(t)}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
               tab === t
-                ? "bg-white shadow-sm"
+                ? "bg-white shadow-sm text-brand-red"
                 : "text-gray-500 hover:text-gray-700"
             }`}
-            style={tab === t ? { color: RED } : undefined}
           >
             {t === "password" ? "Password Login" : "Login with OTP"}
           </button>
@@ -89,49 +78,17 @@ export default function LoginForm() {
           noValidate
           className="flex flex-col gap-4"
         >
-          {/* Email */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="email"
-              className="text-sm font-medium text-gray-700"
-            >
-              Email address
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                <AiOutlineMail className="w-4.5 h-4.5" />
-              </span>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                {...register("email")}
-                className={`w-full pl-10 pr-4 py-2.5 text-sm text-gray-900 border rounded-lg outline-none transition-all duration-150
-                  placeholder:text-gray-400 bg-white
-                  focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
-                  ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-xs text-red-500 flex items-center gap-1">
-                <svg
-                  className="w-3.5 h-3.5 shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+          <Input
+            id="email"
+            label="Email address"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            icon={<AiOutlineMail className="w-4.5 h-4.5" />}
+            error={errors.email?.message}
+            {...register("email")}
+          />
 
-          {/* Password */}
           <PasswordInput
             label="Password"
             id="password"
@@ -148,56 +105,26 @@ export default function LoginForm() {
               <input
                 type="checkbox"
                 {...register("rememberMe")}
-                className="w-4 h-4 rounded border-gray-300"
-                style={{ accentColor: RED }}
+                className="w-4 h-4 rounded border-gray-300 accent-brand-red"
               />
               <span className="text-sm text-gray-600">Remember me</span>
             </label>
             <Link
               href="/forgot-password"
-              className="text-sm font-medium hover:underline transition-colors"
-              style={{ color: RED }}
+              className="text-sm font-medium text-brand-red hover:underline transition-colors"
             >
               Forgot password?
             </Link>
           </div>
 
-          {/* Submit */}
-          <button
+          <Button
             type="submit"
-            disabled={isLoading}
-            className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
-              transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-              shadow-sm hover:opacity-90 flex items-center justify-center gap-2"
-            style={{ background: RED }}
+            loading={isLoading}
+            loadingText="Signing in…"
+            className="mt-1"
           >
-            {isLoading ? (
-              <>
-                <svg
-                  className="w-4 h-4 animate-spin"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Signing in…
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
+            Sign In
+          </Button>
 
           {submitError && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -213,11 +140,7 @@ export default function LoginForm() {
           </div>
 
           {/* Google SSO placeholder — brand colors intentionally left as-is */}
-          <button
-            type="button"
-            className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700
-              hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center gap-2.5"
-          >
+          <Button type="button" variant="outline" className="gap-2.5">
             <svg className="w-5 h-5" viewBox="0 0 48 48">
               <path
                 fill="#FFC107"
@@ -237,7 +160,7 @@ export default function LoginForm() {
               />
             </svg>
             Continue with Google
-          </button>
+          </Button>
         </form>
       ) : (
         <OTPLogin />
@@ -246,11 +169,7 @@ export default function LoginForm() {
       {/* Footer */}
       <p className="mt-7 text-center text-sm text-gray-500">
         Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="font-semibold hover:underline"
-          style={{ color: RED }}
-        >
+        <Link href="/register" className="font-semibold text-brand-red hover:underline">
           Create account
         </Link>
       </p>

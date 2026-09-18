@@ -9,6 +9,7 @@ import {
   AiOutlineClose,
   AiOutlineFilter,
   AiOutlineCheckCircle,
+  AiOutlineMessage,
 } from "react-icons/ai";
 import {
   BsHeart,
@@ -16,7 +17,6 @@ import {
   BsShieldCheck,
   BsFunnel,
   BsStarFill,
-  BsStar,
 } from "react-icons/bs";
 import { FiChevronDown, FiZap, FiChevronRight } from "react-icons/fi";
 import AuthService from "@/services/auth.service";
@@ -55,8 +55,8 @@ const EXP_BUCKETS = [
 function ModeBadge({ verified }: { verified: boolean }) {
   if (!verified) return null;
   return (
-    <span className="flex items-center gap-1 text-xs font-medium text-green-700">
-      <BsShieldCheck className="w-3.5 h-3.5 text-green-500" /> Verified
+    <span className="flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full shrink-0">
+      <BsShieldCheck className="w-3 h-3 text-green-500" /> Verified
     </span>
   );
 }
@@ -118,18 +118,16 @@ function CheckboxFilter({
 
 function StarRating({ rating, reviewCount }: { rating: number | null; reviewCount: number }) {
   if (rating === null) {
-    return <span className="text-xs text-gray-400">No reviews yet</span>;
+    return (
+      <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
+        No reviews yet
+      </span>
+    );
   }
   return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((i) =>
-        i <= Math.round(rating) ? (
-          <BsStarFill key={i} className="w-3 h-3 text-amber-400" />
-        ) : (
-          <BsStar key={i} className="w-3 h-3 text-gray-200" />
-        ),
-      )}
-      <span className="text-xs font-semibold text-gray-700 ml-0.5">{rating.toFixed(1)}</span>
+    <div className="flex items-center gap-1 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+      <BsStarFill className="w-3 h-3 text-amber-400 shrink-0" />
+      <span className="text-xs font-bold text-gray-800">{rating.toFixed(1)}</span>
       <span className="text-xs text-gray-400">({reviewCount})</span>
     </div>
   );
@@ -152,96 +150,118 @@ function TeacherCard({
 
   return (
     <div
-      className="group bg-white border border-gray-100 rounded-2xl p-4 hover:border-orange-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 animate-fade-in-up"
+      className="group relative bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:border-orange-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 animate-fade-in-up"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        {t.photoUrl && !imgBroken ? (
-          <img
-            src={t.photoUrl}
-            alt={t.name}
-            onError={() => setImgBroken(true)}
-            className="w-12 h-12 rounded-xl object-cover shrink-0 transition-transform duration-200 group-hover:scale-105"
-          />
+      {/* Save button — floating top-right */}
+      <button
+        onClick={onToggleLike}
+        disabled={liking}
+        aria-label={t.isLiked ? "Remove from saved tutors" : "Save tutor"}
+        className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 shadow-sm hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
+      >
+        {t.isLiked ? (
+          <BsHeartFill className="w-3.5 h-3.5 text-red-500 animate-heart-pop" />
         ) : (
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold shrink-0 transition-transform duration-200 group-hover:scale-105"
-            style={{ background: t.bg, color: t.color }}
-          >
-            {t.initials}
-          </div>
+          <BsHeart className="w-3.5 h-3.5" />
         )}
+      </button>
+
+      <div className="flex items-start gap-4">
+        {/* Avatar with verified badge overlay */}
+        <div className="relative shrink-0">
+          {t.photoUrl && !imgBroken ? (
+            <img
+              src={t.photoUrl}
+              alt={t.name}
+              onError={() => setImgBroken(true)}
+              className="w-14 h-14 rounded-2xl object-cover ring-1 ring-gray-100 transition-transform duration-200 group-hover:scale-105"
+            />
+          ) : (
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold ring-1 ring-gray-100 transition-transform duration-200 group-hover:scale-105"
+              style={{ background: t.bg, color: t.color }}
+            >
+              {t.initials}
+            </div>
+          )}
+          {t.verified && (
+            <div
+              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm"
+              title="Verified tutor"
+            >
+              <BsShieldCheck className="w-3.5 h-3.5 text-green-500" />
+            </div>
+          )}
+        </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Row 1: Name + save */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-semibold text-gray-900">{t.name}</h3>
-                <ModeBadge verified={t.verified} />
-              </div>
-              <div className="text-xs text-gray-500 mt-0.5 truncate">
-                {t.expertise || "Tutor"} &nbsp;·&nbsp; {formatExperience(t.experienceYears)}
-              </div>
-            </div>
-
-            <button
-              onClick={onToggleLike}
-              disabled={liking}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all shrink-0 disabled:opacity-50"
-            >
-              {t.isLiked ? (
-                <BsHeartFill className="w-3.5 h-3.5 text-red-500 animate-heart-pop" />
-              ) : (
-                <BsHeart className="w-3.5 h-3.5" />
-              )}
-            </button>
+        <div className="flex-1 min-w-0 pr-8">
+          {/* Row 1: Name + verified chip */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-[15px] font-semibold text-gray-900 truncate max-w-55" title={t.name}>
+              {t.name}
+            </h3>
+            <ModeBadge verified={t.verified} />
           </div>
 
-          {/* Row 2: Rating + location */}
-          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5">
+          {/* Row 2: Expertise + experience chips */}
+          <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+            <span className="text-xs font-medium text-gray-600 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full truncate max-w-40">
+              {t.expertise || "Tutor"}
+            </span>
+            <span className="text-xs text-gray-500">{formatExperience(t.experienceYears)}</span>
+          </div>
+
+          {/* Row 3: Rating + location */}
+          <div className="flex items-center flex-wrap gap-2 mt-2">
             <StarRating rating={t.rating} reviewCount={t.reviewCount} />
-            <span className="text-gray-200 hidden sm:block">|</span>
             <div className="flex items-center gap-1 text-xs text-gray-500">
-              <AiOutlineEnvironment className="w-3.5 h-3.5" />
-              {[t.city, t.state, t.country].filter(Boolean).join(", ") || "Location not specified"}
+              <AiOutlineEnvironment className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate max-w-55">
+                {[t.city, t.state, t.country].filter(Boolean).join(", ") || "Location not specified"}
+              </span>
             </div>
           </div>
 
-          {/* Row 3: About */}
+          {/* Row 4: About */}
           {t.about && (
-            <p className="text-xs text-gray-500 mt-2 line-clamp-1 leading-relaxed">{t.about}</p>
+            <p className="text-[13px] text-gray-500 mt-2.5 line-clamp-2 leading-relaxed">{t.about}</p>
           )}
 
-          {/* Row 4: Courses */}
+          {/* Row 5: Courses */}
           {t.courses.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {t.courses.map((c) => (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {t.courses.slice(0, 4).map((c) => (
                 <span
                   key={c}
-                  className="text-[11px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full border border-gray-100"
+                  className="text-[11px] font-medium bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100"
                 >
                   {c}
                 </span>
               ))}
+              {t.courses.length > 4 && (
+                <span className="text-[11px] font-medium text-gray-400 px-1 py-0.5">
+                  +{t.courses.length - 4} more
+                </span>
+              )}
             </div>
           )}
 
-          {/* Row 5: CTAs */}
-          <div className="flex items-center justify-end mt-3 pt-2.5 border-t border-gray-100 gap-2">
+          {/* Row 6: CTAs */}
+          <div className="flex items-center justify-end mt-4 pt-3 border-t border-gray-100 gap-2">
             <Link
               href={`/teacher/${t.id}`}
-              className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+              className="px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
             >
               View Profile
             </Link>
             <button
               onClick={onContact}
-              className="px-3.5 py-1 text-xs font-semibold rounded-lg text-white transition-all hover:opacity-90"
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
               style={{ background: ORANGE }}
             >
+              <AiOutlineMessage className="w-3.5 h-3.5" />
               Contact
             </button>
           </div>

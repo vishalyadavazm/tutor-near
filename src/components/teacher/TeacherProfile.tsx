@@ -83,6 +83,7 @@ function IdTagSelector({
   onToggle,
   loading,
   emptyText,
+  error,
 }: {
   label?: string;
   options: { id: number; label: string }[];
@@ -90,6 +91,7 @@ function IdTagSelector({
   onToggle: (id: number) => void;
   loading?: boolean;
   emptyText?: string;
+  error?: string;
 }) {
   return (
     <div>
@@ -123,6 +125,18 @@ function IdTagSelector({
           )}
         </div>
       )}
+      {error && (
+        <p className="text-[11px] text-red-500 flex items-center gap-1 mt-2">
+          <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -132,11 +146,13 @@ function Field({
   label,
   required,
   hint,
+  error,
   children,
 }: {
   label: string;
   required?: boolean;
   hint?: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -146,7 +162,20 @@ function Field({
         {required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-gray-400">{hint}</p>}
+      {error ? (
+        <p className="text-[11px] text-red-500 flex items-center gap-1">
+          <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {error}
+        </p>
+      ) : (
+        hint && <p className="text-[11px] text-gray-400">{hint}</p>
+      )}
     </div>
   );
 }
@@ -155,6 +184,12 @@ const inputCls =
   "w-full px-3.5 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-xl outline-none bg-white placeholder:text-gray-400 hover:border-gray-300 focus:border-orange-400 focus:ring-2 transition-all";
 
 const inputFocusStyle = { "--tw-ring-color": `${ORANGE}30` } as React.CSSProperties;
+
+function fieldStyle(hasError?: boolean): React.CSSProperties {
+  return hasError
+    ? { ...inputFocusStyle, borderColor: "#F87171", backgroundColor: "#FEF2F2" }
+    : inputFocusStyle;
+}
 
 /* ─── Completion helper ─────────────────────────────── */
 function calcCompletion(f: {
@@ -210,6 +245,7 @@ export default function TeacherProfile() {
   const idProofInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   /* Basic identity (display only — not part of the mentor profile payload) */
   const [photoUrl, setPhotoUrl] = useState<string>("");
@@ -330,6 +366,31 @@ export default function TeacherProfile() {
   const initials = `${firstName[0] ?? "T"}${lastName[0] ?? ""}`.toUpperCase();
   const selectedCourseNames = courses.filter((c) => courseIds.includes(c.id)).map((c) => c.name);
 
+  const photoError =
+    showErrors && !photoFile && !hasExistingPhoto ? "Please upload a profile photo" : undefined;
+  const genderError = showErrors && !gender ? "Please select your gender" : undefined;
+  const dobError = showErrors && !dob ? "Date of birth is required" : undefined;
+  const experienceError =
+    showErrors && !totalExperience.trim() ? "Years of experience is required" : undefined;
+  const expertiseError = showErrors && !expertise.trim() ? "Expertise is required" : undefined;
+  const aboutError =
+    showErrors && about.trim().length <= 30
+      ? "Please write at least 30 characters"
+      : undefined;
+  const tempAddressError =
+    showErrors && !tempAddress.trim() ? "Temporary address is required" : undefined;
+  const permanentAddressError =
+    showErrors && !permanentAddress.trim() ? "Permanent address is required" : undefined;
+  const cityError = showErrors && !city.trim() ? "City is required" : undefined;
+  const stateError = showErrors && !stateName.trim() ? "State is required" : undefined;
+  const countryError = showErrors && !country.trim() ? "Country is required" : undefined;
+  const coursesError =
+    showErrors && courseIds.length === 0 ? "Select at least one course you can teach" : undefined;
+  const qualificationsError =
+    showErrors && qualificationIds.length === 0
+      ? "Select at least one qualification"
+      : undefined;
+
   function toggleId(list: number[], id: number, setter: (v: number[]) => void) {
     setter(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   }
@@ -358,6 +419,7 @@ export default function TeacherProfile() {
     setSaveError(null);
 
     if (!photoFile && !hasExistingPhoto) {
+      setShowErrors(true);
       setSaveError("Please upload a profile photo.");
       return;
     }
@@ -375,10 +437,12 @@ export default function TeacherProfile() {
       courseIds.length === 0 ||
       qualificationIds.length === 0
     ) {
+      setShowErrors(true);
       setSaveError("Please fill in all required fields before saving.");
       return;
     }
 
+    setShowErrors(false);
     setSaving(true);
     try {
       const payload = {
@@ -590,6 +654,8 @@ export default function TeacherProfile() {
                     <p className="text-xs text-gray-400 mt-0.5">
                       This is your current photo. Choose a new file to replace it.
                     </p>
+                  ) : photoError ? (
+                    <p className="text-xs text-red-500 mt-0.5 font-medium">{photoError}</p>
                   ) : (
                     <p className="text-xs text-orange-500 mt-0.5 font-medium">
                       Required to publish your profile
@@ -634,9 +700,10 @@ export default function TeacherProfile() {
             {/* ── Personal & Experience Details ── */}
             <SectionCard icon={<AiOutlineCalendar className="w-4 h-4" />} title="Personal & Experience Details">
               <div className="grid grid-cols-3 gap-4">
-                <Field label="Gender" required>
+                <Field label="Gender" required error={genderError}>
                   <select
                     className={inputCls}
+                    style={fieldStyle(!!genderError)}
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                   >
@@ -646,21 +713,21 @@ export default function TeacherProfile() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Date of Birth" required>
+                <Field label="Date of Birth" required error={dobError}>
                   <input
                     type="date"
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!dobError)}
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                   />
                 </Field>
-                <Field label="Years of Experience" required>
+                <Field label="Years of Experience" required error={experienceError}>
                   <input
                     type="number"
                     min="0"
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!experienceError)}
                     value={totalExperience}
                     onChange={(e) => setTotalExperience(e.target.value)}
                     placeholder="e.g. 5"
@@ -675,10 +742,11 @@ export default function TeacherProfile() {
                 label="Bio / About"
                 required
                 hint="Write in first person. Describe your teaching approach, strengths, and what makes you unique."
+                error={aboutError}
               >
                 <textarea
                   className={`${inputCls} resize-none`}
-                  style={inputFocusStyle}
+                  style={fieldStyle(!!aboutError)}
                   rows={5}
                   value={about}
                   onChange={(e) => setAbout(e.target.value.slice(0, 600))}
@@ -703,10 +771,11 @@ export default function TeacherProfile() {
                   label="Expertise"
                   required
                   hint="A short label for what you're known for, e.g. Teaching, JEE Coaching"
+                  error={expertiseError}
                 >
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!expertiseError)}
                     value={expertise}
                     onChange={(e) => setExpertise(e.target.value)}
                     placeholder="e.g. Teaching"
@@ -720,25 +789,26 @@ export default function TeacherProfile() {
                 selected={courseIds}
                 onToggle={(id) => toggleId(courseIds, id, setCourseIds)}
                 loading={loadingOptions}
+                error={coursesError}
               />
             </SectionCard>
 
             {/* ── Location ── */}
             <SectionCard icon={<AiOutlineEnvironment className="w-4 h-4" />} title="Location">
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <Field label="Temporary Address" required>
+                <Field label="Temporary Address" required error={tempAddressError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!tempAddressError)}
                     value={tempAddress}
                     onChange={(e) => setTempAddress(e.target.value)}
                     placeholder="e.g. Delhi 6"
                   />
                 </Field>
-                <Field label="Permanent Address" required>
+                <Field label="Permanent Address" required error={permanentAddressError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!permanentAddressError)}
                     value={permanentAddress}
                     onChange={(e) => setPermanentAddress(e.target.value)}
                     placeholder="e.g. Mumbai Bandra"
@@ -746,28 +816,28 @@ export default function TeacherProfile() {
                 </Field>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <Field label="City" required>
+                <Field label="City" required error={cityError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!cityError)}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="e.g. Delhi"
                   />
                 </Field>
-                <Field label="State" required>
+                <Field label="State" required error={stateError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!stateError)}
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
                     placeholder="e.g. Delhi"
                   />
                 </Field>
-                <Field label="Country" required>
+                <Field label="Country" required error={countryError}>
                   <input
                     className={inputCls}
-                    style={inputFocusStyle}
+                    style={fieldStyle(!!countryError)}
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     placeholder="e.g. India"
@@ -784,6 +854,7 @@ export default function TeacherProfile() {
                 selected={qualificationIds}
                 onToggle={(id) => toggleId(qualificationIds, id, setQualificationIds)}
                 loading={loadingOptions}
+                error={qualificationsError}
               />
             </SectionCard>
 
