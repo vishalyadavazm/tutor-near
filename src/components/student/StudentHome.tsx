@@ -8,8 +8,9 @@ import {
   AiOutlineBell,
   AiOutlineClose,
   AiOutlineFilter,
-  AiOutlineCheckCircle,
   AiOutlineMessage,
+  AiOutlineUnorderedList,
+  AiOutlineAppstore,
 } from "react-icons/ai";
 import {
   BsHeart,
@@ -18,12 +19,13 @@ import {
   BsFunnel,
   BsStarFill,
 } from "react-icons/bs";
-import { FiChevronDown, FiZap, FiChevronRight } from "react-icons/fi";
+import { FiChevronDown } from "react-icons/fi";
+import { MdOutlineWork } from "react-icons/md";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
 import studentService, { StudentProfileRecord } from "@/services/student.service";
-import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory, getInitials } from "@/utils/teacherDisplay";
+import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -51,15 +53,6 @@ const EXP_BUCKETS = [
 ];
 
 /* ─── Sub-components ────────────────────────────── */
-
-function ModeBadge({ verified }: { verified: boolean }) {
-  if (!verified) return null;
-  return (
-    <span className="flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full shrink-0">
-      <BsShieldCheck className="w-3 h-3 text-green-500" /> Verified
-    </span>
-  );
-}
 
 function FilterSection({
   title,
@@ -133,6 +126,41 @@ function StarRating({ rating, reviewCount }: { rating: number | null; reviewCoun
   );
 }
 
+function Avatar({
+  t,
+  sizeClass,
+  textSizeClass,
+}: {
+  t: Pick<DisplayTeacher, "photoUrl" | "initials" | "bg" | "color" | "name">;
+  sizeClass: string;
+  textSizeClass: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [broken, setBroken] = useState(false);
+
+  return (
+    <div
+      className={`relative shrink-0 overflow-hidden rounded-xl ring-1 ring-gray-100 transition-transform duration-200 group-hover:scale-105 ${sizeClass}`}
+    >
+      <div
+        className={`absolute inset-0 flex items-center justify-center font-bold ${textSizeClass}`}
+        style={{ background: t.bg, color: t.color }}
+      >
+        {t.initials}
+      </div>
+      {t.photoUrl && !broken && (
+        <img
+          src={t.photoUrl}
+          alt={t.name}
+          onLoad={() => setLoaded(true)}
+          onError={() => setBroken(true)}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
+        />
+      )}
+    </div>
+  );
+}
+
 function TeacherCard({
   t,
   liking,
@@ -146,11 +174,9 @@ function TeacherCard({
   onContact: () => void;
   index?: number;
 }) {
-  const [imgBroken, setImgBroken] = useState(false);
-
   return (
     <div
-      className="group relative bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:border-orange-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 animate-fade-in-up"
+      className="group relative flex flex-col h-full bg-white border border-gray-100 rounded-xl p-4 hover:border-orange-200 hover:shadow-md transition-all duration-150 animate-fade-in-up"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
       {/* Save button — floating top-right */}
@@ -158,78 +184,157 @@ function TeacherCard({
         onClick={onToggleLike}
         disabled={liking}
         aria-label={t.isLiked ? "Remove from saved tutors" : "Save tutor"}
-        className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 shadow-sm hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
+        className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 shadow-sm hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
       >
         {t.isLiked ? (
-          <BsHeartFill className="w-3.5 h-3.5 text-red-500 animate-heart-pop" />
+          <BsHeartFill className="w-3 h-3 text-red-500 animate-heart-pop" />
         ) : (
-          <BsHeart className="w-3.5 h-3.5" />
+          <BsHeart className="w-3 h-3" />
         )}
       </button>
 
-      <div className="flex items-start gap-4">
-        {/* Avatar with verified badge overlay */}
-        <div className="relative shrink-0">
-          {t.photoUrl && !imgBroken ? (
-            <img
-              src={t.photoUrl}
-              alt={t.name}
-              onError={() => setImgBroken(true)}
-              className="w-14 h-14 rounded-2xl object-cover ring-1 ring-gray-100 transition-transform duration-200 group-hover:scale-105"
-            />
-          ) : (
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold ring-1 ring-gray-100 transition-transform duration-200 group-hover:scale-105"
-              style={{ background: t.bg, color: t.color }}
+      {/* Header: avatar + name */}
+      <div className="flex items-start gap-3 pr-8">
+        <Avatar t={t} sizeClass="w-11 h-11" textSizeClass="text-sm" />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/teacher/${t.id}`}
+              className="text-sm font-semibold truncate hover:underline group-hover:text-[#E8621A] transition-colors"
+              style={{ color: NAVY }}
+              title={t.name}
             >
-              {t.initials}
-            </div>
-          )}
-          {t.verified && (
-            <div
-              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm"
-              title="Verified tutor"
+              {t.name}
+            </Link>
+            {t.verified && (
+              <BsShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" title="Verified tutor" />
+            )}
+          </div>
+          <span className="text-xs text-gray-500 truncate block mt-0.5">
+            {t.expertise || "Tutor"}
+          </span>
+        </div>
+      </div>
+
+      {/* Rating + experience */}
+      <div className="flex items-center flex-wrap gap-1.5 mt-3">
+        <StarRating rating={t.rating} reviewCount={t.reviewCount} />
+        <span className="flex items-center gap-1 text-[11px] text-gray-500">
+          <MdOutlineWork className="w-3 h-3 shrink-0 text-gray-400" />
+          {formatExperience(t.experienceYears)}
+        </span>
+      </div>
+
+      {/* Location */}
+      <div className="flex items-center gap-1 text-xs text-gray-500 mt-1.5">
+        <AiOutlineEnvironment className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+        <span className="truncate">
+          {[t.city, t.state, t.country].filter(Boolean).join(", ") || "Location not specified"}
+        </span>
+      </div>
+
+      {/* About */}
+      {t.about && (
+        <p className="text-xs text-gray-500 mt-2 line-clamp-1 leading-relaxed">{t.about}</p>
+      )}
+
+      {/* Skills / courses */}
+      {t.courses.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {t.courses.slice(0, 2).map((c) => (
+            <span
+              key={c}
+              className="text-[11px] font-medium bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100"
             >
-              <BsShieldCheck className="w-3.5 h-3.5 text-green-500" />
-            </div>
+              {c}
+            </span>
+          ))}
+          {t.courses.length > 2 && (
+            <span className="text-[11px] font-medium text-gray-400 px-1 py-0.5">
+              +{t.courses.length - 2} more
+            </span>
           )}
         </div>
+      )}
+
+      {/* CTAs — pinned to bottom so cards of different heights line up */}
+      <div className="flex items-center gap-2 mt-auto pt-3">
+        <Link
+          href={`/teacher/${t.id}`}
+          className="flex-1 text-center px-2 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+        >
+          View Profile
+        </Link>
+        <button
+          onClick={onContact}
+          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-semibold rounded-lg text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
+          style={{ background: ORANGE }}
+        >
+          <AiOutlineMessage className="w-3.5 h-3.5" />
+          Contact
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TeacherListItem({
+  t,
+  liking,
+  onToggleLike,
+  onContact,
+  index = 0,
+}: {
+  t: DisplayTeacher;
+  liking: boolean;
+  onToggleLike: () => void;
+  onContact: () => void;
+  index?: number;
+}) {
+  return (
+    <div
+      className="group bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-md transition-all duration-150 animate-fade-in-up"
+      style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+    >
+      <div className="flex items-start gap-4">
+        <Avatar t={t} sizeClass="w-14 h-14" textSizeClass="text-lg" />
 
         {/* Content */}
-        <div className="flex-1 min-w-0 pr-8">
-          {/* Row 1: Name + verified chip */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-[15px] font-semibold text-gray-900 truncate max-w-55" title={t.name}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Link
+              href={`/teacher/${t.id}`}
+              className="text-base font-semibold truncate max-w-70 hover:underline group-hover:text-[#E8621A] transition-colors"
+              style={{ color: NAVY }}
+              title={t.name}
+            >
               {t.name}
-            </h3>
-            <ModeBadge verified={t.verified} />
+            </Link>
+            {t.verified && (
+              <BsShieldCheck className="w-4 h-4 text-green-500 shrink-0" title="Verified tutor" />
+            )}
           </div>
+          <div className="text-sm text-gray-500 mt-0.5">{t.expertise || "Tutor"}</div>
 
-          {/* Row 2: Expertise + experience chips */}
-          <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
-            <span className="text-xs font-medium text-gray-600 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full truncate max-w-40">
-              {t.expertise || "Tutor"}
-            </span>
-            <span className="text-xs text-gray-500">{formatExperience(t.experienceYears)}</span>
-          </div>
-
-          {/* Row 3: Rating + location */}
-          <div className="flex items-center flex-wrap gap-2 mt-2">
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
             <StarRating rating={t.rating} reviewCount={t.reviewCount} />
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <AiOutlineEnvironment className="w-3.5 h-3.5 shrink-0" />
+            <span className="flex items-center gap-1 text-xs text-gray-500">
+              <MdOutlineWork className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+              {formatExperience(t.experienceYears)}
+            </span>
+            <span className="flex items-center gap-1 text-xs text-gray-500">
+              <AiOutlineEnvironment className="w-3.5 h-3.5 shrink-0 text-gray-400" />
               <span className="truncate max-w-55">
                 {[t.city, t.state, t.country].filter(Boolean).join(", ") || "Location not specified"}
               </span>
-            </div>
+            </span>
           </div>
 
-          {/* Row 4: About */}
           {t.about && (
             <p className="text-[13px] text-gray-500 mt-2.5 line-clamp-2 leading-relaxed">{t.about}</p>
           )}
 
-          {/* Row 5: Courses */}
           {t.courses.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {t.courses.slice(0, 4).map((c) => (
@@ -247,24 +352,36 @@ function TeacherCard({
               )}
             </div>
           )}
+        </div>
 
-          {/* Row 6: CTAs */}
-          <div className="flex items-center justify-end mt-4 pt-3 border-t border-gray-100 gap-2">
-            <Link
-              href={`/teacher/${t.id}`}
-              className="px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
-            >
-              View Profile
-            </Link>
-            <button
-              onClick={onContact}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
-              style={{ background: ORANGE }}
-            >
-              <AiOutlineMessage className="w-3.5 h-3.5" />
-              Contact
-            </button>
-          </div>
+        {/* CTAs — stacked on the right */}
+        <div className="flex flex-col items-end gap-2 w-32 shrink-0">
+          <button
+            onClick={onToggleLike}
+            disabled={liking}
+            aria-label={t.isLiked ? "Remove from saved tutors" : "Save tutor"}
+            className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
+          >
+            {t.isLiked ? (
+              <BsHeartFill className="w-3.5 h-3.5 text-red-500 animate-heart-pop" />
+            ) : (
+              <BsHeart className="w-3.5 h-3.5" />
+            )}
+          </button>
+          <button
+            onClick={onContact}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
+            style={{ background: ORANGE }}
+          >
+            <AiOutlineMessage className="w-3.5 h-3.5" />
+            Contact
+          </button>
+          <Link
+            href={`/teacher/${t.id}`}
+            className="w-full text-center px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+          >
+            View Profile
+          </Link>
         </div>
       </div>
     </div>
@@ -290,6 +407,8 @@ export default function StudentHome() {
   const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
   const [myProfile, setMyProfile] = useState<StudentProfileRecord | null>(null);
   const [myProfileLoading, setMyProfileLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -518,6 +637,46 @@ export default function StudentHome() {
     </div>
   );
 
+  const studentCompletionPct = computeStudentCompletion(myProfile);
+  const profileBanner =
+    !myProfileLoading && !bannerDismissed && studentCompletionPct < 100 ? (
+      <div
+        className="border rounded-2xl overflow-hidden animate-fade-in-up"
+        style={{ borderColor: ORANGE_BORDER }}
+      >
+        <div className="flex items-start justify-between gap-2 px-4 py-4" style={{ background: ORANGE_BG }}>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold" style={{ color: NAVY }}>
+              Complete your profile
+            </div>
+            <div className="text-xs text-gray-500 mt-0.5">
+              Add your class and qualification
+            </div>
+            <div className="w-full h-1.5 bg-orange-100 rounded-full mt-2.5 overflow-hidden">
+              <div
+                className="h-1.5 rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${studentCompletionPct}%`, background: ORANGE }}
+              />
+            </div>
+            <Link
+              href="/profile"
+              className="text-xs font-semibold mt-2 inline-block hover:underline"
+              style={{ color: ORANGE }}
+            >
+              Finish setup →
+            </Link>
+          </div>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            aria-label="Dismiss"
+            className="text-gray-400 hover:text-gray-600 shrink-0"
+          >
+            <AiOutlineClose className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    ) : null;
+
   const ct = contactTeacher;
 
   return (
@@ -602,11 +761,13 @@ export default function StudentHome() {
           <div className="flex items-center justify-between flex-wrap gap-3 animate-fade-in-up">
             <div>
               <h1 className="text-lg font-bold" style={{ color: NAVY }}>
-                Find Your Perfect Tutor
+                Find your perfect tutor{" "}
+                <span className="text-sm font-normal text-gray-500">
+                  · {results.length} tutor{results.length === 1 ? "" : "s"}
+                </span>
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                {results.length} teachers available
-                {cityFilter !== "all" ? ` in ${cityFilter}` : ""}
+                {cityFilter !== "all" ? `In ${cityFilter}` : "All cities"}
                 {courseFilters.length > 0 ? ` · ${courseFilters.join(", ")}` : ""}
               </p>
             </div>
@@ -642,6 +803,30 @@ export default function StudentHome() {
                   <option value="name">Name (A–Z)</option>
                 </select>
               </div>
+
+              {/* View toggle */}
+              <div className="flex items-center gap-1 border border-gray-200 rounded-xl p-1 bg-white">
+                <button
+                  onClick={() => setViewMode("list")}
+                  aria-label="List view"
+                  aria-pressed={viewMode === "list"}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                    viewMode === "list" ? "bg-orange-50 text-orange-600" : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <AiOutlineUnorderedList className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === "grid"}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                    viewMode === "grid" ? "bg-orange-50 text-orange-600" : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <AiOutlineAppstore className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -651,8 +836,11 @@ export default function StudentHome() {
       <div className="max-w-[1400px] mx-auto px-5 py-6 flex gap-6 items-start">
 
         {/* ── Filter sidebar (desktop) ── */}
-        <aside className="hidden lg:block w-60 shrink-0 sticky top-24 self-start bg-white border border-gray-100 rounded-2xl p-4 animate-fade-in-up hover:shadow-md transition-shadow duration-300">
-          {filterPanel}
+        <aside className="hidden lg:flex lg:flex-col gap-4 w-60 shrink-0 sticky top-24 self-start">
+          {profileBanner}
+          <div className="bg-white border border-gray-100 rounded-2xl p-4 animate-fade-in-up hover:shadow-md transition-shadow duration-300">
+            {filterPanel}
+          </div>
         </aside>
 
         {/* ── Mobile filter drawer ── */}
@@ -689,21 +877,27 @@ export default function StudentHome() {
             </div>
           )}
           {loading ? (
-            <div className="flex flex-col gap-3">
-              {[0, 1, 2].map((i) => (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
+                  : "flex flex-col gap-3"
+              }
+            >
+              {[0, 1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
-                  className="bg-white border border-gray-100 rounded-2xl p-4 animate-fade-in-up"
-                  style={{ animationDelay: `${i * 80}ms` }}
+                  className="bg-white border border-gray-100 rounded-xl p-4 animate-fade-in-up"
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-xl shrink-0 animate-shimmer" />
+                    <div className="w-11 h-11 rounded-xl shrink-0 animate-shimmer" />
                     <div className="flex-1 min-w-0 flex flex-col gap-2">
-                      <div className="h-3.5 w-1/3 rounded-full animate-shimmer" />
+                      <div className="h-3.5 w-2/3 rounded-full animate-shimmer" />
                       <div className="h-3 w-1/2 rounded-full animate-shimmer" />
-                      <div className="h-3 w-2/3 rounded-full animate-shimmer" />
                     </div>
                   </div>
+                  <div className="h-3 w-1/3 rounded-full animate-shimmer mt-3" />
                 </div>
               ))}
             </div>
@@ -726,17 +920,32 @@ export default function StudentHome() {
                 Clear all filters
               </button>
             </div>
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {results.map((t, i) => (
+                <TeacherCard
+                  key={t.id}
+                  t={t}
+                  index={i}
+                  liking={likingId === t.id}
+                  onToggleLike={() => handleToggleLike(t.id, t.isLiked)}
+                  onContact={() => setContactTeacher(t)}
+                />
+              ))}
+            </div>
           ) : (
-            results.map((t, i) => (
-              <TeacherCard
-                key={t.id}
-                t={t}
-                index={i}
-                liking={likingId === t.id}
-                onToggleLike={() => handleToggleLike(t.id, t.isLiked)}
-                onContact={() => setContactTeacher(t)}
-              />
-            ))
+            <div className="flex flex-col gap-3">
+              {results.map((t, i) => (
+                <TeacherListItem
+                  key={t.id}
+                  t={t}
+                  index={i}
+                  liking={likingId === t.id}
+                  onToggleLike={() => handleToggleLike(t.id, t.isLiked)}
+                  onContact={() => setContactTeacher(t)}
+                />
+              ))}
+            </div>
           )}
 
           {/* Pagination hint */}
@@ -746,118 +955,6 @@ export default function StudentHome() {
             </div>
           )}
         </div>
-
-        {/* ── Right sidebar: your profile ── */}
-        <aside className="hidden xl:flex flex-col w-72 shrink-0 sticky top-24 self-start gap-4">
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 animate-pop-in">
-            {myProfileLoading ? (
-              <div className="flex flex-col items-center gap-3 py-2">
-                <div className="w-16 h-16 rounded-full animate-shimmer" />
-                <div className="h-3 w-2/3 rounded-full animate-shimmer" />
-                <div className="h-2.5 w-1/3 rounded-full animate-shimmer" />
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col items-center text-center mb-4">
-                  <div className="relative mb-3 transition-transform duration-300 hover:scale-105">
-                    {myProfile?.profile_pic ? (
-                      <img
-                        src={myProfile.profile_pic}
-                        alt="Your profile"
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold text-white"
-                        style={{ background: NAVY }}
-                      >
-                        {getInitials(myProfile?.user?.name || "Student")}
-                      </div>
-                    )}
-                    <svg className="absolute -inset-1.5 w-19 h-19 -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="46" fill="none" stroke="#F3F4F6" strokeWidth="6" />
-                      <circle
-                        cx="50" cy="50" r="46" fill="none"
-                        stroke={computeStudentCompletion(myProfile) >= 80 ? "#16A34A" : ORANGE}
-                        strokeWidth="6" strokeLinecap="round"
-                        strokeDasharray={`${(2 * Math.PI * 46 * computeStudentCompletion(myProfile)) / 100} ${2 * Math.PI * 46}`}
-                        style={{ transition: "stroke-dasharray 0.5s ease" }}
-                      />
-                    </svg>
-                  </div>
-                  <div className="text-sm font-semibold text-gray-900 truncate max-w-full">
-                    {myProfile?.user?.name || "Your Profile"}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {myProfile?.standard?.name || "Add your class / qualification"}
-                  </div>
-                  {myProfile?.looking_for_mentor && (
-                    <span
-                      className="mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full animate-gentle-pulse"
-                      style={{ background: ORANGE_BG, color: ORANGE }}
-                    >
-                      Looking for a mentor
-                    </span>
-                  )}
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-gray-500">Profile strength</span>
-                    <span className="text-[10px] font-semibold" style={{ color: ORANGE }}>
-                      {computeStudentCompletion(myProfile)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-1.5 rounded-full transition-all duration-700 ease-out"
-                      style={{ width: `${computeStudentCompletion(myProfile)}%`, background: ORANGE }}
-                    />
-                  </div>
-                </div>
-
-                <Link
-                  href="/profile"
-                  className="group w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-orange-200 hover:-translate-y-0.5 active:translate-y-0"
-                  style={{ background: ORANGE }}
-                >
-                  {myProfile ? "Edit Profile" : "Complete Profile"}
-                  <FiChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </>
-            )}
-          </div>
-
-          {myProfile && computeStudentCompletion(myProfile) < 100 && (
-            <div
-              className="bg-white border border-gray-100 rounded-2xl p-5 animate-fade-in-up hover:shadow-md transition-shadow"
-              style={{ animationDelay: "120ms" }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: ORANGE_BG }}
-                >
-                  <FiZap className="w-3.5 h-3.5 animate-gentle-pulse" style={{ color: ORANGE }} />
-                </div>
-                <h3 className="text-sm font-semibold" style={{ color: NAVY }}>
-                  Finish your profile
-                </h3>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed mb-3">
-                A complete profile helps tutors understand what you&apos;re looking for and respond faster.
-              </p>
-              <Link
-                href="/profile"
-                className="text-xs font-semibold inline-flex items-center gap-1 hover:underline"
-                style={{ color: ORANGE }}
-              >
-                <AiOutlineCheckCircle className="w-3.5 h-3.5" />
-                Complete now
-              </Link>
-            </div>
-          )}
-        </aside>
       </div>
 
       {ct && (

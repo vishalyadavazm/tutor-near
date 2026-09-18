@@ -72,6 +72,7 @@ export interface MentorAllProfile {
   created_t: string;
   modified_t: string;
   profile_pic: string | null;
+  banner: string | null;
   gender: string;
   date_of_birth: string;
   identity_verification: string | null;
@@ -223,9 +224,9 @@ class MentorService {
     }
   }
 
-  async updateProfile(payload: MentorProfilePayload) {
+  async updateProfile(id: number, payload: MentorProfilePayload) {
     try {
-      const res = await api.patch(API.MENTOR_PROFILE, this.buildProfileFormData(payload), {
+      const res = await api.patch(`${API.MENTOR_PROFILE}/${id}`, this.buildProfileFormData(payload), {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;

@@ -465,7 +465,7 @@ export default function TeacherProfile() {
       };
 
       if (existingProfile) {
-        await mentorService.updateProfile(payload);
+        await mentorService.updateProfile(existingProfile.id, payload);
       } else {
         await mentorService.createProfile(payload);
       }

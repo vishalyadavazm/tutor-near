@@ -7,6 +7,7 @@ export interface DisplayTeacher {
   bg: string;
   color: string;
   photoUrl: string | null;
+  bannerUrl: string | null;
   expertise: string;
   about: string;
   city: string;
@@ -66,6 +67,7 @@ export function toDisplayTeacher(
     bg,
     color,
     photoUrl: p.profile_pic,
+    bannerUrl: p.banner,
     expertise: p.expertise,
     about: p.about,
     city: p.city,
@@ -98,6 +100,7 @@ export function toDisplayTeacherFromDirectory(entry: MentorDirectoryEntry): Disp
     bg,
     color,
     photoUrl: p.profile_pic,
+    bannerUrl: p.banner,
     expertise: p.expertise,
     about: p.about,
     city: p.city,

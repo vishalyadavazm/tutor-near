@@ -363,26 +363,38 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
           <div className="flex-1 min-w-0 flex flex-col gap-4">
 
             {/* Cover + Profile card */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl shadow-sm">
 
               {/* Cover banner */}
               <div
-                className="relative h-32 overflow-hidden"
-                style={{ background: "linear-gradient(135deg, #0A1628 0%, #1A2F5E 55%, #0D1F45 100%)" }}
+                className="relative h-32 rounded-t-2xl overflow-hidden"
+                style={
+                  teacher.bannerUrl
+                    ? undefined
+                    : { background: "linear-gradient(135deg, #0A1628 0%, #1A2F5E 55%, #0D1F45 100%)" }
+                }
               >
-                {[...Array(20)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute rounded-full opacity-10"
-                    style={{
-                      width: `${(i % 3) * 3 + 4}px`,
-                      height: `${(i % 3) * 3 + 4}px`,
-                      left: `${(i * 13) % 100}%`,
-                      top: `${(i * 17) % 100}%`,
-                      background: i % 3 === 0 ? "#F59E0B" : "#60A5FA",
-                    }}
+                {teacher.bannerUrl ? (
+                  <img
+                    src={teacher.bannerUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
-                ))}
+                ) : (
+                  [...Array(20)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute rounded-full opacity-10"
+                      style={{
+                        width: `${(i % 3) * 3 + 4}px`,
+                        height: `${(i % 3) * 3 + 4}px`,
+                        left: `${(i * 13) % 100}%`,
+                        top: `${(i * 17) % 100}%`,
+                        background: i % 3 === 0 ? "#F59E0B" : "#60A5FA",
+                      }}
+                    />
+                  ))
+                )}
               </div>
 
               {/* Profile info */}
@@ -390,7 +402,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                 {/* Avatar + action row */}
                 <div className="flex items-end justify-between -mt-14 mb-4">
                   <div
-                    className="rounded-full shrink-0 shadow-xl"
+                    className="relative z-10 rounded-full shrink-0 shadow-xl"
                     style={{
                       background: "linear-gradient(135deg, #F97316, #EC4899, #8B5CF6)",
                       padding: "3px",
