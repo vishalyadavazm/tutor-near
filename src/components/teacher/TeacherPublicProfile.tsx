@@ -11,7 +11,6 @@ import {
   AiOutlineSearch,
   AiOutlineClose,
   AiOutlineBell,
-  AiOutlineCheckCircle,
 } from "react-icons/ai";
 import { BsShieldCheck, BsHeart, BsHeartFill, BsStarFill, BsStar } from "react-icons/bs";
 import { FiBookOpen } from "react-icons/fi";
@@ -94,14 +93,7 @@ function RateWidget({
 }) {
   const [hoverValue, setHoverValue] = useState(0);
 
-  if (isRated) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <AiOutlineCheckCircle className="w-3.5 h-3.5 text-green-500" />
-        <span className="text-xs text-gray-500">You&apos;ve already rated this tutor</span>
-      </div>
-    );
-  }
+  if (isRated) return null;
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
