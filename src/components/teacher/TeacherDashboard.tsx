@@ -33,7 +33,6 @@ const ORANGE = "#E8621A";
 const ORANGE_BG = "#FFF3EC";
 const ORANGE_BORDER = "#F8C9A8";
 const NAVY_BG = "#EEF0F6";
-const MUTED = "#9FA9C4";
 
 /* ─── Profile completion ──────────────────────────────── */
 
@@ -399,27 +398,6 @@ export default function TeacherDashboard() {
             </span>
           </Link>
 
-          {/* Nav links */}
-          <div className="hidden md:flex items-center gap-1 flex-1">
-            {[
-              { label: "Dashboard", href: "/dashboard", active: true },
-              { label: "Students", href: "/students", active: false },
-              { label: "Sessions", href: "/sessions", active: false },
-              { label: "Earnings", href: "/earnings", active: false },
-            ].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                  item.active ? "text-white" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-                style={item.active ? { background: ORANGE } : undefined}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
           {/* Right actions */}
           <div className="flex items-center gap-2 ml-auto">
             <button className="relative w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
@@ -437,26 +415,13 @@ export default function TeacherDashboard() {
               )}
             </button>
 
-            {/* Avatar */}
-            <Link href="/profile" className="flex items-center gap-2 pl-2 border-l border-gray-100">
-              {myProfile?.profile_pic ? (
-                <img
-                  src={myProfile.profile_pic}
-                  alt={displayName}
-                  className="w-8 h-8 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                  style={{ background: NAVY }}
-                >
-                  {displayInitials}
-                </div>
-              )}
-              <div className="hidden lg:block leading-tight">
-                <div className="text-xs font-semibold text-gray-800 truncate max-w-[140px]">{displayName}</div>
-                <div className="text-[10px]" style={{ color: MUTED }}>View profile</div>
-              </div>
+            <Link
+              href="/profile"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ background: NAVY }}
+              title="My Profile"
+            >
+              {displayInitials}
             </Link>
 
             <button
@@ -473,7 +438,7 @@ export default function TeacherDashboard() {
       <div className="max-w-[1400px] mx-auto px-5 py-6 flex gap-6 items-start">
 
         {/* ── Left sidebar ── */}
-        <aside className="hidden lg:flex flex-col w-52 shrink-0 sticky top-24 self-start gap-1">
+        <aside className="hidden lg:flex flex-col w-60 shrink-0 sticky top-24 self-start gap-1">
 
           {/* Profile mini-card */}
           <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-3 text-center">
@@ -769,10 +734,9 @@ export default function TeacherDashboard() {
               </div>
             )}
           </div>
-        </main>
 
-        {/* ── Right sidebar ── */}
-        <aside className="hidden xl:flex flex-col w-72 shrink-0 sticky top-24 self-start gap-4">
+          {/* ── Profile strength / sessions / tips ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           {/* Profile Strength widget */}
           <div className="bg-white border border-gray-100 rounded-2xl p-5">
@@ -933,7 +897,8 @@ export default function TeacherDashboard() {
               ))}
             </div>
           </div>
-        </aside>
+          </div>
+        </main>
       </div>
     </div>
   );

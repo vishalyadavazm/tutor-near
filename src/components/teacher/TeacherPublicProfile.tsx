@@ -25,6 +25,43 @@ import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
 
+function Avatar({
+  photoUrl,
+  name,
+  initials,
+  bg,
+  color,
+}: {
+  photoUrl: string | null;
+  name: string;
+  initials: string;
+  bg: string;
+  color: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [broken, setBroken] = useState(false);
+
+  return (
+    <div className="relative w-28 h-28 rounded-full overflow-hidden">
+      <div
+        className="absolute inset-0 flex items-center justify-center text-2xl font-black"
+        style={{ background: bg, color }}
+      >
+        {initials}
+      </div>
+      {photoUrl && !broken && (
+        <img
+          src={photoUrl}
+          alt={name}
+          onLoad={() => setLoaded(true)}
+          onError={() => setBroken(true)}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
+        />
+      )}
+    </div>
+  );
+}
+
 function StarRating({ rating, reviewCount }: { rating: number | null; reviewCount: number }) {
   if (rating === null) {
     return <span className="text-sm text-gray-400">No reviews yet</span>;
@@ -409,20 +446,13 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     }}
                   >
                     <div className="rounded-full bg-white" style={{ padding: "3px" }}>
-                      {teacher.photoUrl ? (
-                        <img
-                          src={teacher.photoUrl}
-                          alt={teacher.name}
-                          className="w-28 h-28 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-28 h-28 rounded-full flex items-center justify-center text-2xl font-black"
-                          style={{ background: teacher.bg, color: teacher.color }}
-                        >
-                          {teacher.initials}
-                        </div>
-                      )}
+                      <Avatar
+                        photoUrl={teacher.photoUrl}
+                        name={teacher.name}
+                        initials={teacher.initials}
+                        bg={teacher.bg}
+                        color={teacher.color}
+                      />
                     </div>
                   </div>
 
