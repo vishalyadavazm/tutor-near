@@ -366,8 +366,6 @@ export default function TeacherProfile() {
   const initials = `${firstName[0] ?? "T"}${lastName[0] ?? ""}`.toUpperCase();
   const selectedCourseNames = courses.filter((c) => courseIds.includes(c.id)).map((c) => c.name);
 
-  const photoError =
-    showErrors && !photoFile && !hasExistingPhoto ? "Please upload a profile photo" : undefined;
   const genderError = showErrors && !gender ? "Please select your gender" : undefined;
   const dobError = showErrors && !dob ? "Date of birth is required" : undefined;
   const experienceError =
@@ -418,11 +416,6 @@ export default function TeacherProfile() {
   async function handleSave() {
     setSaveError(null);
 
-    if (!photoFile && !hasExistingPhoto) {
-      setShowErrors(true);
-      setSaveError("Please upload a profile photo.");
-      return;
-    }
     if (
       !gender ||
       !dob ||
@@ -604,7 +597,7 @@ export default function TeacherProfile() {
             </div>
 
             {/* ── Photo & Basic Info ── */}
-            <SectionCard icon={<AiOutlineUser className="w-4 h-4" />} title="Photo & Basic Info">
+            <SectionCard icon={<AiOutlineUser className="w-4 h-4" />} title="Photo & Basic Info" optional>
               {/* Photo upload */}
               <div className="flex items-center gap-5 mb-6 pb-5 border-b border-gray-100">
                 <div className="relative shrink-0">
@@ -654,11 +647,9 @@ export default function TeacherProfile() {
                     <p className="text-xs text-gray-400 mt-0.5">
                       This is your current photo. Choose a new file to replace it.
                     </p>
-                  ) : photoError ? (
-                    <p className="text-xs text-red-500 mt-0.5 font-medium">{photoError}</p>
                   ) : (
-                    <p className="text-xs text-orange-500 mt-0.5 font-medium">
-                      Required to publish your profile
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Optional — helps students recognize you
                     </p>
                   )}
                 </div>
