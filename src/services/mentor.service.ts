@@ -108,6 +108,25 @@ export interface MentorDirectoryEntry {
   total_likes: number;
 }
 
+export interface MentorCommentUserRef {
+  id: number;
+  name: string;
+}
+
+export interface MentorComment {
+  id: number;
+  is_editable: boolean;
+  created_t: string;
+  modified_t: string;
+  is_edited: boolean;
+  comment: string;
+  created_by: MentorCommentUserRef | null;
+  modified_by: MentorCommentUserRef | null;
+  mentor: MentorCommentUserRef;
+  commented_by: MentorCommentUserRef | null;
+  parent: number | null;
+}
+
 export interface MentorProfilePayload {
   profile_pic?: File;
   banner?: File;
@@ -182,6 +201,32 @@ class MentorService {
   async getAllProfiles(): Promise<MentorDirectoryEntry[]> {
     const res = await api.get<ListResponse<MentorDirectoryEntry>>(API.MENTOR_ALL_PROFILES);
     return res.data.data;
+  }
+
+  async getMentorComments(mentorId: number): Promise<MentorComment[]> {
+    const res = await api.get<ListResponse<MentorComment>>(API.MENTOR_COMMENTS, {
+      params: {
+        filter: `mentor:eq:${mentorId}`,
+        sort: "-created_t",
+      },
+    });
+    return res.data.data;
+  }
+
+  async addMentorComment(mentorId: number, comment: string): Promise<void> {
+    try {
+      await api.post(API.MENTOR_COMMENTS_CREATE, { comment, mentor: mentorId });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to post comment."));
+    }
+  }
+
+  async updateMentorComment(commentId: number, comment: string): Promise<void> {
+    try {
+      await api.patch(`${API.MENTOR_COMMENTS_CREATE}/${commentId}`, { comment });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to update comment."));
+    }
   }
 
   private buildProfileFormData(payload: MentorProfilePayload): FormData {

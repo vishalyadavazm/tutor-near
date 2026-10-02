@@ -17,7 +17,7 @@ import { FiBookOpen } from "react-icons/fi";
 import { MdOutlineSchool } from "react-icons/md";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
-import mentorService, { MentorDirectoryEntry } from "@/services/mentor.service";
+import mentorService, { MentorComment, MentorDirectoryEntry } from "@/services/mentor.service";
 import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
 
 /* ── Brand ──────────────────────────────────────── */
@@ -208,6 +208,16 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [comments, setComments] = useState<MentorComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentSubmitError, setCommentSubmitError] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentDraft, setEditCommentDraft] = useState("");
+  const [editCommentError, setEditCommentError] = useState<string | null>(null);
+  const [savingComment, setSavingComment] = useState(false);
 
   const [searchText, setSearchText] = useState("");
   const [contactType, setContactType] = useState<"inquiry" | "demo" | "message">("inquiry");
@@ -236,6 +246,27 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setCommentsLoading(true);
+      setCommentsError(null);
+      try {
+        const mentorComments = await mentorService.getMentorComments(teacherId);
+        if (!cancelled) setComments(mentorComments);
+      } catch {
+        if (!cancelled) setCommentsError("Couldn't load comments. Please try again later.");
+      } finally {
+        if (!cancelled) setCommentsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [teacherId]);
 
   const teachers = useMemo(
     () => profiles.map(toDisplayTeacherFromDirectory).filter((t): t is DisplayTeacher => t !== null),
@@ -281,6 +312,71 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
       setRateError(err instanceof Error ? err.message : "Couldn't submit rating.");
     } finally {
       setSubmittingRating(false);
+    }
+  }
+
+  async function handleSubmitComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const comment = commentDraft.trim();
+    if (!comment) return;
+
+    setSubmittingComment(true);
+    setCommentSubmitError(null);
+    try {
+      await mentorService.addMentorComment(teacherId, comment);
+    } catch (err) {
+      setCommentSubmitError(err instanceof Error ? err.message : "Unable to post comment.");
+      setSubmittingComment(false);
+      return;
+    }
+
+    setCommentDraft("");
+    try {
+      setComments(await mentorService.getMentorComments(teacherId));
+      setCommentsError(null);
+    } catch {
+      setCommentsError("Your comment was posted, but the list couldn't refresh.");
+    } finally {
+      setSubmittingComment(false);
+    }
+  }
+
+  function startEditingComment(item: MentorComment) {
+    setEditingCommentId(item.id);
+    setEditCommentDraft(item.comment);
+    setEditCommentError(null);
+  }
+
+  function cancelEditingComment() {
+    setEditingCommentId(null);
+    setEditCommentDraft("");
+    setEditCommentError(null);
+  }
+
+  async function handleUpdateComment(commentId: number) {
+    const comment = editCommentDraft.trim();
+    if (!comment) return;
+
+    setSavingComment(true);
+    setEditCommentError(null);
+    try {
+      await mentorService.updateMentorComment(commentId, comment);
+    } catch (err) {
+      setEditCommentError(err instanceof Error ? err.message : "Unable to update comment.");
+      setSavingComment(false);
+      return;
+    }
+
+    setComments((current) => current.map((item) =>
+      item.id === commentId ? { ...item, comment, is_edited: true } : item,
+    ));
+    cancelEditingComment();
+    try {
+      setComments(await mentorService.getMentorComments(teacherId));
+    } catch {
+      setCommentsError("Your comment was updated, but the list couldn't refresh.");
+    } finally {
+      setSavingComment(false);
     }
   }
 
@@ -589,6 +685,131 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                 ))}
               </div>
             </div>
+
+            {/* Comments */}
+            <section className="bg-white rounded-2xl shadow-sm px-6 py-5">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <AiOutlineMessage className="w-4 h-4 text-gray-500" />
+                  <h2 className="text-sm font-semibold" style={{ color: NAVY }}>Comments</h2>
+                </div>
+                {!commentsLoading && !commentsError && (
+                  <span className="text-xs text-gray-400">{comments.length}</span>
+                )}
+              </div>
+
+              <form onSubmit={handleSubmitComment} className="mb-5">
+                <label htmlFor="teacher-comment" className="sr-only">Write a comment</label>
+                <textarea
+                  id="teacher-comment"
+                  value={commentDraft}
+                  onChange={(event) => setCommentDraft(event.target.value)}
+                  placeholder="Share your experience with this teacher"
+                  rows={3}
+                  className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-colors focus:border-orange-400"
+                />
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  {commentSubmitError ? (
+                    <p role="alert" className="text-xs text-red-500">{commentSubmitError}</p>
+                  ) : <span />}
+                  <button
+                    type="submit"
+                    disabled={!commentDraft.trim() || submittingComment}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: ORANGE }}
+                  >
+                    <AiOutlineMessage className="h-3.5 w-3.5" />
+                    {submittingComment ? "Posting…" : "Post comment"}
+                  </button>
+                </div>
+              </form>
+
+              {commentsLoading ? (
+                <p className="text-sm text-gray-400">Loading comments…</p>
+              ) : commentsError ? (
+                <p className="text-sm text-red-500">{commentsError}</p>
+              ) : comments.length === 0 ? (
+                <p className="text-sm text-gray-400">No comments yet.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {comments.map((item) => {
+                    const author = item.commented_by?.name || item.created_by?.name || "Student";
+
+                    return (
+                      <article key={item.id} className="py-4 first:pt-0 last:pb-0">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 shrink-0 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-semibold">
+                            {author.trim().slice(0, 1).toUpperCase() || "S"}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span className="text-sm font-semibold text-gray-800">{author}</span>
+                              <time className="text-xs text-gray-400" dateTime={item.created_t}>
+                                {new Date(item.created_t).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </time>
+                              {item.is_edited && <span className="text-xs text-gray-400">Edited</span>}
+                            </div>
+                            {item.parent !== null && (
+                              <p className="text-xs text-gray-400 mt-1">Reply to comment #{item.parent}</p>
+                            )}
+                            {editingCommentId === item.id ? (
+                              <div className="mt-2">
+                                <textarea
+                                  aria-label="Edit comment"
+                                  value={editCommentDraft}
+                                  onChange={(event) => setEditCommentDraft(event.target.value)}
+                                  rows={3}
+                                  className="w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-orange-400"
+                                />
+                                {editCommentError && (
+                                  <p role="alert" className="mt-1 text-xs text-red-500">{editCommentError}</p>
+                                )}
+                                <div className="mt-2 flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditingComment}
+                                    disabled={savingComment}
+                                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:opacity-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateComment(item.id)}
+                                    disabled={!editCommentDraft.trim() || savingComment}
+                                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                                    style={{ background: ORANGE }}
+                                  >
+                                    {savingComment ? "Saving…" : "Save"}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mt-1 flex items-start justify-between gap-3">
+                                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{item.comment}</p>
+                                {item.is_editable && (
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingComment(item)}
+                                    className="shrink-0 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
 
           </div>
 
