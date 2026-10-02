@@ -211,6 +211,10 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const [comments, setComments] = useState<MentorComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState<string | null>(null);
+  const [commentsPage, setCommentsPage] = useState(1);
+  const [commentsHaveMore, setCommentsHaveMore] = useState(false);
+  const [changingCommentPage, setChangingCommentPage] = useState(false);
+  const [commentPageError, setCommentPageError] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentSubmitError, setCommentSubmitError] = useState<string | null>(null);
@@ -254,8 +258,12 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
       setCommentsLoading(true);
       setCommentsError(null);
       try {
-        const mentorComments = await mentorService.getMentorComments(teacherId);
-        if (!cancelled) setComments(mentorComments);
+        const response = await mentorService.getMentorComments(teacherId, 1);
+        if (!cancelled) {
+          setComments(response.comments);
+          setCommentsPage(response.page);
+          setCommentsHaveMore(response.moreRecords);
+        }
       } catch {
         if (!cancelled) setCommentsError("Couldn't load comments. Please try again later.");
       } finally {
@@ -332,7 +340,10 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
 
     setCommentDraft("");
     try {
-      setComments(await mentorService.getMentorComments(teacherId));
+      const response = await mentorService.getMentorComments(teacherId, 1);
+      setComments(response.comments);
+      setCommentsPage(response.page);
+      setCommentsHaveMore(response.moreRecords);
       setCommentsError(null);
     } catch {
       setCommentsError("Your comment was posted, but the list couldn't refresh.");
@@ -371,12 +382,24 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
       item.id === commentId ? { ...item, comment, is_edited: true } : item,
     ));
     cancelEditingComment();
+    setSavingComment(false);
+  }
+
+  async function handleCommentPageChange(page: number) {
+    if (page < 1 || page === commentsPage || changingCommentPage) return;
+    if (page > commentsPage && !commentsHaveMore) return;
+
+    setChangingCommentPage(true);
+    setCommentPageError(null);
     try {
-      setComments(await mentorService.getMentorComments(teacherId));
+      const response = await mentorService.getMentorComments(teacherId, page);
+      setComments(response.comments);
+      setCommentsPage(response.page);
+      setCommentsHaveMore(response.moreRecords);
     } catch {
-      setCommentsError("Your comment was updated, but the list couldn't refresh.");
+      setCommentPageError("Couldn't load comments. Please try again.");
     } finally {
-      setSavingComment(false);
+      setChangingCommentPage(false);
     }
   }
 
@@ -807,6 +830,34 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                       </article>
                     );
                   })}
+                </div>
+              )}
+
+              {comments.length > 0 && !commentsLoading && !commentsError && (
+                <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleCommentPageChange(commentsPage - 1)}
+                    disabled={commentsPage <= 1 || changingCommentPage}
+                    className="rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">Page {commentsPage}</p>
+                    {changingCommentPage && <p className="mt-0.5 text-[11px] text-gray-400">Loading…</p>}
+                    {commentPageError && (
+                      <p role="alert" className="mt-0.5 text-[11px] text-red-500">{commentPageError}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCommentPageChange(commentsPage + 1)}
+                    disabled={!commentsHaveMore || changingCommentPage}
+                    className="rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                  </button>
                 </div>
               )}
             </section>

@@ -127,6 +127,15 @@ export interface MentorComment {
   parent: number | null;
 }
 
+interface MentorCommentListResponse {
+  data: MentorComment[];
+  info: {
+    page: number;
+    per_page: number;
+    more_records: boolean;
+  };
+}
+
 export interface MentorProfilePayload {
   profile_pic?: File;
   banner?: File;
@@ -203,14 +212,24 @@ class MentorService {
     return res.data.data;
   }
 
-  async getMentorComments(mentorId: number): Promise<MentorComment[]> {
-    const res = await api.get<ListResponse<MentorComment>>(API.MENTOR_COMMENTS, {
+  async getMentorComments(mentorId: number, page = 1): Promise<{
+    comments: MentorComment[];
+    page: number;
+    moreRecords: boolean;
+  }> {
+    const res = await api.get<MentorCommentListResponse>(API.MENTOR_COMMENTS, {
       params: {
         filter: `mentor:eq:${mentorId}`,
         sort: "-created_t",
+        page,
+        per_page: 10,
       },
     });
-    return res.data.data;
+    return {
+      comments: res.data.data,
+      page: res.data.info.page,
+      moreRecords: res.data.info.more_records,
+    };
   }
 
   async addMentorComment(mentorId: number, comment: string): Promise<void> {
