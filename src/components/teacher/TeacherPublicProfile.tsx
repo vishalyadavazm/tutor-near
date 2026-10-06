@@ -12,6 +12,8 @@ import {
   AiOutlineSearch,
   AiOutlineClose,
   AiOutlineBell,
+  AiOutlineLeft,
+  AiOutlineRight,
 } from "react-icons/ai";
 import { BsShieldCheck, BsHeart, BsHeartFill, BsStarFill, BsStar } from "react-icons/bs";
 import { FiBookOpen } from "react-icons/fi";
@@ -217,6 +219,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const [commentsHaveMore, setCommentsHaveMore] = useState(false);
   const [changingCommentPage, setChangingCommentPage] = useState(false);
   const [commentPageError, setCommentPageError] = useState<string | null>(null);
+  const [showComments, setShowComments] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentSubmitError, setCommentSubmitError] = useState<string | null>(null);
@@ -277,6 +280,22 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
       cancelled = true;
     };
   }, [teacherId]);
+
+  useEffect(() => {
+    if (!showComments) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowComments(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [showComments]);
 
   const teachers = useMemo(
     () => profiles.map(toDisplayTeacherFromDirectory).filter((t): t is DisplayTeacher => t !== null),
@@ -719,157 +738,222 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
             </div>
 
             {/* Comments */}
-            <section className="bg-white rounded-2xl shadow-sm px-6 py-5">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <AiOutlineMessage className="w-4 h-4 text-gray-500" />
-                  <h2 className="text-sm font-semibold" style={{ color: NAVY }}>Comments</h2>
-                </div>
-                {!commentsLoading && !commentsError && (
-                  <span className="text-xs text-gray-400">{comments.length}</span>
-                )}
-              </div>
+            <button
+              type="button"
+              onClick={() => setShowComments(true)}
+              className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 sm:px-5"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-700">
+                <AiOutlineMessage className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-gray-900">Comments</span>
+              </span>
+              <span className="shrink-0 text-sm font-semibold text-blue-700">View comments</span>
+            </button>
 
-              <form onSubmit={handleSubmitComment} className="mb-5">
-                <label htmlFor="teacher-comment" className="sr-only">Write a comment</label>
-                <textarea
-                  id="teacher-comment"
-                  value={commentDraft}
-                  onChange={(event) => setCommentDraft(event.target.value)}
-                  placeholder="Share your experience with this teacher"
-                  rows={3}
-                  className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-colors focus:border-orange-400"
-                />
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  {commentSubmitError ? (
-                    <p role="alert" className="text-xs text-red-500">{commentSubmitError}</p>
-                  ) : <span />}
-                  <button
-                    type="submit"
-                    disabled={!commentDraft.trim() || submittingComment}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                    style={{ background: ORANGE }}
-                  >
-                    <AiOutlineMessage className="h-3.5 w-3.5" />
-                    {submittingComment ? "Posting…" : "Post comment"}
-                  </button>
-                </div>
-              </form>
+            {showComments && (
+              <div
+                className="fixed inset-0 z-[190] flex items-center justify-center bg-black/50 p-3 sm:p-6"
+                onClick={(event) => {
+                  if (event.target === event.currentTarget) setShowComments(false);
+                }}
+              >
+                <section
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="teacher-comments-title"
+                  className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
+                >
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                    <div>
+                      <div>
+                        <h2 id="teacher-comments-title" className="text-base font-semibold text-gray-900">Comments</h2>
+                        <p className="mt-0.5 text-sm text-gray-500">{teacher.name}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowComments(false)}
+                      aria-label="Close comments"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    >
+                      <AiOutlineClose className="h-4 w-4" />
+                    </button>
+                  </div>
 
-              {commentsLoading ? (
-                <p className="text-sm text-gray-400">Loading comments…</p>
-              ) : commentsError ? (
-                <p className="text-sm text-red-500">{commentsError}</p>
-              ) : comments.length === 0 ? (
-                <p className="text-sm text-gray-400">No comments yet.</p>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {comments.map((item) => {
-                    const author = item.commented_by?.name || item.created_by?.name || "Student";
+                  <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                    <div className="sr-only" aria-live="polite">
+                      {commentsLoading ? "Loading comments" : `${comments.length} comments shown`}
+                    </div>
 
-                    return (
-                      <article key={item.id} className="py-4 first:pt-0 last:pb-0">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 shrink-0 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-semibold">
-                            {author.trim().slice(0, 1).toUpperCase() || "S"}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="text-sm font-semibold text-gray-800">{author}</span>
-                              <time className="text-xs text-gray-400" dateTime={item.created_t}>
-                                {new Date(item.created_t).toLocaleDateString(undefined, {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                              </time>
-                              {item.is_edited && <span className="text-xs text-gray-400">Edited</span>}
+                {commentsLoading ? (
+                  <div role="status" aria-label="Loading comments" className="space-y-3">
+                    {[0, 1].map((item) => (
+                      <div key={item} className="flex animate-pulse gap-3 rounded-xl border border-gray-100 p-4">
+                        <div className="h-10 w-10 shrink-0 rounded-full bg-gray-200" />
+                        <div className="flex-1 space-y-2 py-1">
+                          <div className="h-3 w-1/4 rounded bg-gray-200" />
+                          <div className="h-3 w-full rounded bg-gray-100" />
+                          <div className="h-3 w-2/3 rounded bg-gray-100" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : commentsError ? (
+                  <p role="alert" className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {commentsError}
+                  </p>
+                ) : comments.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center">
+                    <AiOutlineMessage className="mx-auto h-5 w-5 text-gray-400" />
+                    <p className="mt-2 text-sm font-medium text-gray-700">No comments yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {comments.map((item) => {
+                      const author = item.commented_by?.name || item.created_by?.name || "Student";
+
+                      return (
+                        <article key={item.id} className="py-4 first:pt-0 last:pb-0">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-800">
+                              {author.trim().slice(0, 1).toUpperCase() || "S"}
                             </div>
-                            {item.parent !== null && (
-                              <p className="text-xs text-gray-400 mt-1">Reply to comment #{item.parent}</p>
-                            )}
-                            {editingCommentId === item.id ? (
-                              <div className="mt-2">
-                                <textarea
-                                  aria-label="Edit comment"
-                                  value={editCommentDraft}
-                                  onChange={(event) => setEditCommentDraft(event.target.value)}
-                                  rows={3}
-                                  className="w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-orange-400"
-                                />
-                                {editCommentError && (
-                                  <p role="alert" className="mt-1 text-xs text-red-500">{editCommentError}</p>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span className="text-sm font-semibold text-gray-900">{author}</span>
+                                <span className="text-gray-300" aria-hidden="true">·</span>
+                                <time className="text-xs text-gray-500" dateTime={item.created_t}>
+                                  {new Date(item.created_t).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </time>
+                                {item.is_edited && (
+                                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">Edited</span>
                                 )}
-                                <div className="mt-2 flex justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={cancelEditingComment}
-                                    disabled={savingComment}
-                                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:opacity-50"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdateComment(item.id)}
-                                    disabled={!editCommentDraft.trim() || savingComment}
-                                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-                                    style={{ background: ORANGE }}
-                                  >
-                                    {savingComment ? "Saving…" : "Save"}
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="mt-1 flex items-start justify-between gap-3">
-                                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{item.comment}</p>
-                                {item.is_editable && (
+                                {item.is_editable && editingCommentId !== item.id && (
                                   <button
                                     type="button"
                                     onClick={() => startEditingComment(item)}
-                                    className="shrink-0 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                    className="ml-auto rounded-md px-2 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                                   >
                                     Edit
                                   </button>
                                 )}
                               </div>
-                            )}
+                              {item.parent !== null && (
+                                <p className="mt-2 text-xs font-medium text-gray-500">Reply to comment #{item.parent}</p>
+                              )}
+                              {editingCommentId === item.id ? (
+                                <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                                  <textarea
+                                    aria-label="Edit comment"
+                                    value={editCommentDraft}
+                                    onChange={(event) => setEditCommentDraft(event.target.value)}
+                                    rows={3}
+                                    className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm leading-6 text-gray-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                                  />
+                                  {editCommentError && (
+                                    <p role="alert" className="mt-2 text-sm text-red-600">{editCommentError}</p>
+                                  )}
+                                  <div className="mt-3 flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={cancelEditingComment}
+                                      disabled={savingComment}
+                                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateComment(item.id)}
+                                      disabled={!editCommentDraft.trim() || savingComment}
+                                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white transition-opacity disabled:opacity-50"
+                                      style={{ background: ORANGE }}
+                                    >
+                                      {savingComment ? "Saving…" : "Save changes"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">{item.comment}</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-
-              {comments.length > 0 && !commentsLoading && !commentsError && (
-                <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => handleCommentPageChange(commentsPage - 1)}
-                    disabled={commentsPage <= 1 || changingCommentPage}
-                    className="rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Previous
-                  </button>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500">Page {commentsPage}</p>
-                    {changingCommentPage && <p className="mt-0.5 text-[11px] text-gray-400">Loading…</p>}
-                    {commentPageError && (
-                      <p role="alert" className="mt-0.5 text-[11px] text-red-500">{commentPageError}</p>
-                    )}
+                        </article>
+                      );
+                    })}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCommentPageChange(commentsPage + 1)}
-                    disabled={!commentsHaveMore || changingCommentPage}
-                    className="rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </section>
+                )}
+
+                {comments.length > 0 && !commentsLoading && !commentsError && (
+                  <nav aria-label="Comments pagination" className="mt-4 border-t border-gray-100 pt-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCommentPageChange(commentsPage - 1)}
+                        disabled={commentsPage <= 1 || changingCommentPage}
+                        className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-60"
+                      >
+                        <AiOutlineLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                        Previous
+                      </button>
+                      <div className="min-w-20 text-center" aria-live="polite">
+                        <p className="text-sm text-gray-600">
+                          Page <span className="font-semibold text-gray-900">{commentsPage}</span>
+                        </p>
+                        {changingCommentPage && <p className="mt-0.5 text-xs text-gray-500">Loading…</p>}
+                        {commentPageError && (
+                          <p role="alert" className="mt-1 text-xs text-red-600">{commentPageError}</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCommentPageChange(commentsPage + 1)}
+                        disabled={!commentsHaveMore || changingCommentPage}
+                        className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-60"
+                      >
+                        Next
+                        <AiOutlineRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </nav>
+                )}
+                  </div>
+
+                  <form onSubmit={handleSubmitComment} className="shrink-0 border-t border-gray-200 bg-gray-50 px-5 py-4">
+                    <label htmlFor="teacher-comment" className="mb-2 block text-sm font-semibold text-gray-800">
+                      Add a comment
+                    </label>
+                    <div className="flex items-end gap-3">
+                      <textarea
+                        id="teacher-comment"
+                        value={commentDraft}
+                        onChange={(event) => setCommentDraft(event.target.value)}
+                        placeholder="Write your comment"
+                        rows={2}
+                        className="min-h-11 w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm leading-5 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!commentDraft.trim() || submittingComment}
+                        className="flex h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ background: ORANGE }}
+                      >
+                        {submittingComment ? "Posting…" : "Post"}
+                      </button>
+                    </div>
+                    {commentSubmitError && (
+                      <p role="alert" className="mt-2 text-sm text-red-600">{commentSubmitError}</p>
+                    )}
+                  </form>
+                </section>
+              </div>
+            )}
 
           </div>
 
