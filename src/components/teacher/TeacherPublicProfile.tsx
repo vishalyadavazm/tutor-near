@@ -675,13 +675,10 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     <p className="text-xs text-gray-600 leading-relaxed line-clamp-6">
                       {teacher.about || "This tutor hasn't added a bio yet."}
                     </p>
-                    <a
-                      href={`tel:${CONTACT_PHONE.replace(/\s/g, "")}`}
-                      className="flex items-center gap-2 mt-3 text-sm font-semibold text-blue-700 hover:text-blue-900"
-                    >
+                    <div className="flex items-center gap-2 mt-3 text-sm font-semibold text-gray-700">
                       <AiOutlinePhone className="w-4 h-4 shrink-0" />
                       {CONTACT_PHONE}
-                    </a>
+                    </div>
                     <div className="flex gap-2 mt-3 pt-3 border-t border-blue-100">
                       <button
                         onClick={() => openContact("inquiry")}
