@@ -2,8 +2,13 @@ import api from "@/lib/axios";
 import axios from "axios";
 import { API } from "@/constants/api";
 
-interface ListResponse<T> {
-  data: T[];
+interface StudentPostListResponse {
+  data: StudentPost[];
+  info: {
+    page: number;
+    per_page: number;
+    more_records: boolean;
+  };
 }
 
 export interface StudentProfileUserRef {
@@ -59,6 +64,25 @@ export interface StudentProfilePayload {
   standard: number;
 }
 
+export interface StudentPost {
+  id: number;
+  created_t: string;
+  modified_t: string;
+  banner: string;
+  title: string;
+  description: string | null;
+  valid_uptp: string | null;
+  is_active: boolean;
+  created_by: number;
+  modified_by: number | null;
+}
+
+export interface StudentPostPayload {
+  title: string;
+  banner: File;
+  description?: string;
+}
+
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
@@ -74,6 +98,45 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 }
 
 class StudentService {
+  async getPostsPage(page = 1, perPage = 10): Promise<{
+    posts: StudentPost[];
+    page: number;
+    perPage: number;
+    moreRecords: boolean;
+  }> {
+    const res = await api.get<StudentPostListResponse>(API.POST_POSTS, {
+      params: { page, per_page: perPage },
+    });
+    return {
+      posts: res.data.data,
+      page: res.data.info.page,
+      perPage: res.data.info.per_page,
+      moreRecords: res.data.info.more_records,
+    };
+  }
+
+  async getPosts(): Promise<StudentPost[]> {
+    const result = await this.getPostsPage();
+    return result.posts;
+  }
+
+  async createPost(payload: StudentPostPayload): Promise<void> {
+    const formData = new FormData();
+    formData.append("title", payload.title);
+    formData.append("banner", payload.banner);
+    if (payload.description?.trim()) {
+      formData.append("description", payload.description.trim());
+    }
+
+    try {
+      await api.post(API.POST_POSTS, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to create job post."));
+    }
+  }
+
   async getProfiles(): Promise<StudentProfileRecord[]> {
     const res = await api.get<{ data: StudentProfileRecord[] | { id: null; user: StudentProfileBasicUser } }>(
       API.STUDENT_PROFILE,

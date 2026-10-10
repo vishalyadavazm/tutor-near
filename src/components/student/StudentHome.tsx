@@ -23,8 +23,9 @@ import { FiChevronDown } from "react-icons/fi";
 import { MdOutlineWork } from "react-icons/md";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
+import JobPostSlider from "@/components/student/JobPostSlider";
 import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
-import studentService, { StudentProfileRecord } from "@/services/student.service";
+import studentService, { StudentPost, StudentProfileRecord } from "@/services/student.service";
 import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
 
 const NAVY = "#15213D";
@@ -392,6 +393,10 @@ function TeacherListItem({
 export default function StudentHome() {
   const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [posts, setPosts] = useState<StudentPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
+  const [postsRetryCount, setPostsRetryCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -438,6 +443,27 @@ export default function StudentHome() {
     let cancelled = false;
 
     (async () => {
+      setPostsLoading(true);
+      setPostsError(null);
+      try {
+        const postsRes = await studentService.getPosts();
+        if (!cancelled) setPosts(postsRes);
+      } catch {
+        if (!cancelled) setPostsError("Couldn't load announcements. Please try again.");
+      } finally {
+        if (!cancelled) setPostsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postsRetryCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
       try {
         const myProfiles = await studentService.getProfiles();
         if (!cancelled) setMyProfile(myProfiles[0] ?? null);
@@ -463,6 +489,16 @@ export default function StudentHome() {
     [teachers],
   );
 
+  const sortedPosts = useMemo(
+    () =>
+      [...posts].sort((a, b) => {
+        const dateDifference = Date.parse(b.created_t) - Date.parse(a.created_t);
+        return Number.isFinite(dateDifference) && dateDifference !== 0
+          ? dateDifference
+          : b.id - a.id;
+      }),
+    [posts],
+  );
   function toggleCourse(c: string) {
     setCourseFilters((prev) =>
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
@@ -480,7 +516,9 @@ export default function StudentHome() {
     } finally {
       setLikingId(null);
     }
+
   }
+
   function clearFilters() {
     setCourseFilters([]);
     setExpBucket("");
@@ -831,6 +869,61 @@ export default function StudentHome() {
           </div>
         </div>
       </div>
+
+      <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-6">
+        <div className="mb-4">
+          <div>
+            <h2 className="text-base font-bold" style={{ color: NAVY }}>Latest job posts</h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              {sortedPosts.length > 2
+                ? `Showing the 2 newest of ${sortedPosts.length} job posts.`
+                : "Browse the latest tutoring requests from the community."}
+            </p>
+          </div>
+        </div>
+
+        {postsLoading || postsError || posts.length > 0 ? (
+          postsLoading ? (
+            <div className="h-52 animate-shimmer rounded-2xl sm:h-60" />
+          ) : postsError ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              <span>{postsError}</span>
+              <button
+                onClick={() => setPostsRetryCount((count) => count + 1)}
+                className="font-semibold underline underline-offset-2"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <JobPostSlider posts={sortedPosts} />
+          )
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-500">
+            No job posts yet. Create the first one.
+          </div>
+        )}
+
+        {!postsLoading && !postsError && sortedPosts.length > 0 && (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:p-5">
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: NAVY }}>All job posts</h3>
+              <p className="mt-0.5 text-xs text-gray-500">
+                {sortedPosts.length} post{sortedPosts.length === 1 ? "" : "s"} total
+              </p>
+            </div>
+            <Link
+              href="/student/posts"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Show all posts
+            </Link>
+          </div>
+        )}
+      </section>
 
       {/* ── Body ── */}
       <div className="max-w-[1400px] mx-auto px-5 py-6 flex gap-6 items-start">

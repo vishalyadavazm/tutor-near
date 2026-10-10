@@ -15,6 +15,7 @@ export const API = {
   MENTOR_COMMENTS: "/comment/comments/",
   MENTOR_COMMENTS_CREATE: "/comment/comments",
   STUDENT_PROFILE: "/student/profile",
+  POST_POSTS: "/post/posts",
   COMMON_QUALIFICATION: "/common/qualification",
   COMMON_DOCUMENT_NAME: "/common/documentname",
   COMMON_COURSES: "/common/courses",
