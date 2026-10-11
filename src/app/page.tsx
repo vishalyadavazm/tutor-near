@@ -5,22 +5,17 @@
  *  Navy:    #15213D   Red: #C0392B   Peach: #FBE7E0   Lavender: #EEF1FB
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import AuthService from "@/services/auth.service";
 import {
   AiOutlineSearch,
   AiOutlineEnvironment,
   AiOutlineCalendar,
   AiOutlineBook,
 } from "react-icons/ai";
-import { BsStarFill, BsHeart, BsChevronDown, BsChevronUp } from "react-icons/bs";
+import { BsStarFill, BsHeartFill, BsChevronDown, BsChevronUp } from "react-icons/bs";
 import {
-  FaRulerCombined,
-  FaFlask,
-  FaLanguage,
-  FaLaptopCode,
-  FaMusic,
-  FaPalette,
   FaFacebookF,
   FaTwitter,
   FaLinkedinIn,
@@ -28,49 +23,34 @@ import {
   FaClock,
   FaUserCheck,
 } from "react-icons/fa";
+import mentorService from "@/services/mentor.service";
+import studentService, { type StudentPost } from "@/services/student.service";
+import JobPostSlider from "@/components/student/JobPostSlider";
+import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
+import { getToken } from "@/utils/auth";
 
 const NAVY = "#15213D";
 const RED = "#C0392B";
+const ORANGE = "#E8621A";
+
+function subscribeToAuthChanges(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", onChange);
+  window.addEventListener("auth-state-change", onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("auth-state-change", onChange);
+  };
+}
+
+function getAuthSnapshot() {
+  return !!getToken();
+}
 
 /* ─── Data ─────────────────────────────────────── */
-const SUBJECTS = [
-  { icon: <FaRulerCombined />, name: "Mathematics" },
-  { icon: <FaFlask />,         name: "Science" },
-  { icon: <FaLanguage />,      name: "Languages" },
-  { icon: <FaLaptopCode />,    name: "Coding" },
-  { icon: <FaMusic />,         name: "Music" },
-  { icon: <FaPalette />,       name: "Fine Arts" },
-];
-
 const TRENDING_SEARCHES = [
   "JEE Physics", "Class 10 Maths", "Spoken English", "Python for Kids",
   "NEET Biology", "Guitar Classes", "GMAT Prep", "French Language",
-];
-
-const CITIES = [
-  { name: "Kanpur",     count: "1,240 tutors" },
-  { name: "Lucknow",    count: "980 tutors" },
-  { name: "Varanasi",   count: "760 tutors" },
-  { name: "Delhi NCR",  count: "2,100 tutors" },
-  { name: "Mumbai",     count: "1,850 tutors" },
-  { name: "Bangalore",  count: "1,620 tutors" },
-  { name: "Pune",       count: "890 tutors" },
-  { name: "Online",     count: "3,400 tutors" },
-];
-
-const TUTORS = [
-  { initials: "SJ", name: "Sarah Jenkins",   role: "Mathematics Expert",  exp: "8+ years exp",  rating: 4.9, desc: "Helping students master calculus and linear algebra with simplified, practical methods.", featured: false },
-  { initials: "AR", name: "Dr. Alex Rivera", role: "Physics & Chemistry", exp: "12+ years exp", rating: 5.0, desc: "Former researcher specializing in making complex scientific theories accessible for all.", featured: true },
-  { initials: "MK", name: "Mila Kuznetsov",  role: "Modern Languages",    exp: "6+ years exp",  rating: 4.8, desc: "Polyglot tutor specializing in conversational French and Spanish using real-world practice.", featured: false },
-  { initials: "RV", name: "Rahul Verma",     role: "Physics",             exp: "5+ years exp",  rating: 4.6, desc: "NEET & Class 12 physics mentor focused on building strong conceptual foundations.", featured: false },
-  { initials: "AG", name: "Anjali Gupta",    role: "Chemistry",           exp: "7+ years exp",  rating: 4.7, desc: "Organic chemistry specialist with a track record of JEE Advanced toppers.", featured: false },
-  { initials: "VR", name: "Vikram Rathi",    role: "Computer Science",    exp: "4+ years exp",  rating: 4.8, desc: "Full-stack developer teaching DSA, Python, and web development from scratch.", featured: false },
-  { initials: "NJ", name: "Neha Joshi",      role: "Biology",             exp: "9+ years exp",  rating: 4.9, desc: "NEET biology expert known for simplifying genetics and human physiology.", featured: false },
-  { initials: "AM", name: "Arjun Mehta",     role: "Economics",           exp: "6+ years exp",  rating: 4.5, desc: "Makes micro and macroeconomics intuitive with real-life Indian market examples.", featured: false },
-  { initials: "PN", name: "Pooja Nair",      role: "Hindi Literature",    exp: "10+ years exp", rating: 4.7, desc: "Specializes in CBSE and ICSE Hindi literature and grammar fundamentals.", featured: false },
-  { initials: "KM", name: "Karan Malhotra",  role: "History",             exp: "5+ years exp",  rating: 4.6, desc: "Storytelling-driven history lessons for Class 9-12 and competitive exams.", featured: false },
-  { initials: "DI", name: "Divya Iyer",      role: "Fine Arts",           exp: "8+ years exp",  rating: 4.8, desc: "Watercolor and sketching coach for beginners and portfolio-building students.", featured: false },
-  { initials: "SK", name: "Sameer Khan",     role: "Music — Guitar",      exp: "11+ years exp", rating: 4.9, desc: "Trains beginners to performance-level acoustic and electric guitar players.", featured: false },
 ];
 
 const TESTIMONIALS = [
@@ -100,53 +80,56 @@ const FOOTER_COLUMNS = [
 ];
 
 /* ─── Sub-components ─────────────────────────────── */
-function TutorCard({ t }: { t: typeof TUTORS[0] }) {
+function TutorCard({ t }: { t: DisplayTeacher }) {
+  const [brokenPhotoUrl, setBrokenPhotoUrl] = useState<string | null>(null);
+
   return (
-    <div
-      className={`rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg
-        ${t.featured ? "border-2 shadow-md" : "border border-gray-100"}`}
-      style={t.featured ? { borderColor: RED } : undefined}
-    >
+    <div className="h-full flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <div
         className="relative h-32 flex items-center justify-center"
-        style={
-          t.featured
-            ? { background: `linear-gradient(135deg, ${RED}, #8E2A1F)` }
-            : { background: "linear-gradient(135deg, #FBE7E0, #F6D6CB)" }
-        }
+        style={{ background: "linear-gradient(135deg, #FBE7E0, #F6D6CB)" }}
       >
-        {t.featured && (
-          <span
-            className="absolute top-3 left-3 flex items-center gap-1 text-[11px] font-semibold text-white px-2.5 py-1 rounded-full"
-            style={{ background: "rgba(0,0,0,0.18)" }}
-          >
-            <BsHeart className="w-3 h-3" /> MOST LOVED
-          </span>
-        )}
-        <span className="absolute top-3 right-3 flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white" style={{ color: NAVY }}>
-          <BsStarFill className="w-3 h-3" style={{ color: "#F2B705" }} /> {t.rating}
-        </span>
-        <div
-          className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-sm font-bold"
-          style={t.featured ? { border: `2px solid ${RED}`, color: RED } : { color: NAVY, border: "2px solid white" }}
+        <span
+          className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold"
+          style={{ color: NAVY }}
+          aria-label={`${t.totalLikes} likes`}
         >
+          <BsHeartFill className="h-3 w-3 text-red-500" />
+          {t.totalLikes.toLocaleString()}
+        </span>
+        <span className="absolute top-3 right-3 flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white" style={{ color: NAVY }}>
+          <BsStarFill className="w-3 h-3" style={{ color: "#F2B705" }} />
+          {t.rating === null ? "New tutor" : t.rating.toFixed(1)}
+        </span>
+        <div className="relative w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center text-sm font-bold border-2 border-white" style={{ color: NAVY }}>
           {t.initials}
+          {t.photoUrl && brokenPhotoUrl !== t.photoUrl && (
+            <img
+              src={t.photoUrl}
+              alt={t.name}
+              onError={() => setBrokenPhotoUrl(t.photoUrl)}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="text-sm font-bold" style={{ color: NAVY }}>{t.name}</h3>
-        <p className="text-[11px] font-semibold uppercase tracking-wide mt-1" style={{ color: RED }}>
-          {t.role} · {t.exp}
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="text-sm font-bold truncate" style={{ color: NAVY }}>{t.name}</h3>
+        <p className="min-h-8 text-[11px] font-semibold uppercase tracking-wide mt-1 line-clamp-2" style={{ color: RED }}>
+          {t.expertise || "Tutor"} · {formatExperience(t.experienceYears)}
         </p>
-        <p className="text-xs text-gray-500 mt-2.5 leading-relaxed line-clamp-2">{t.desc}</p>
-        <hr className="my-3 border-gray-100" />
-        <button
-          className="w-full py-2 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: t.featured ? RED : NAVY }}
+        <p className="min-h-10 text-xs text-gray-500 mt-2.5 leading-relaxed line-clamp-2">
+          {t.about || t.courses.join(", ") || "View this tutor's profile to learn more."}
+        </p>
+        <hr className="mt-3 mb-3 border-gray-100" />
+        <Link
+          href={`/teacher/${t.id}`}
+          className="mt-auto block w-full py-2 rounded-lg text-center text-xs font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: NAVY }}
         >
           View Profile
-        </button>
+        </Link>
       </div>
     </div>
   );
@@ -174,6 +157,69 @@ export default function HomeGuestPage() {
   const [subject, setSubject] = useState("");
   const [location, setLocation] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [teachers, setTeachers] = useState<DisplayTeacher[]>([]);
+  const [teachersLoading, setTeachersLoading] = useState(true);
+  const [teachersError, setTeachersError] = useState(false);
+  const [teachersRetry, setTeachersRetry] = useState(0);
+  const [posts, setPosts] = useState<StudentPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState(false);
+  const [postsRetry, setPostsRetry] = useState(0);
+  const isLoggedIn = useSyncExternalStore(subscribeToAuthChanges, getAuthSnapshot, () => false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTeachers() {
+      setTeachersLoading(true);
+      setTeachersError(false);
+      try {
+        const directory = await mentorService.getAllProfiles({ page: 1, perPage: 8 });
+        const loadedTeachers = directory
+          .map(toDisplayTeacherFromDirectory)
+          .filter((teacher): teacher is DisplayTeacher => teacher !== null)
+          .sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+        if (!cancelled) setTeachers(loadedTeachers);
+      } catch {
+        if (!cancelled) setTeachersError(true);
+      } finally {
+        if (!cancelled) setTeachersLoading(false);
+      }
+    }
+
+    void loadTeachers();
+    return () => {
+      cancelled = true;
+    };
+  }, [teachersRetry]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPosts() {
+      setPostsLoading(true);
+      setPostsError(false);
+      try {
+        const loadedPosts = await studentService.getPosts();
+        const sortedPosts = [...loadedPosts].sort((a, b) => {
+          const dateDifference = Date.parse(b.created_t) - Date.parse(a.created_t);
+          return Number.isFinite(dateDifference) && dateDifference !== 0
+            ? dateDifference
+            : b.id - a.id;
+        });
+        if (!cancelled) setPosts(sortedPosts);
+      } catch {
+        if (!cancelled) setPostsError(true);
+      } finally {
+        if (!cancelled) setPostsLoading(false);
+      }
+    }
+
+    void loadPosts();
+    return () => {
+      cancelled = true;
+    };
+  }, [postsRetry]);
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "Inter, sans-serif" }}>
@@ -181,19 +227,54 @@ export default function HomeGuestPage() {
       {/* ── Navbar ── */}
       <nav className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-lg font-bold" style={{ color: NAVY }}>
-            TutorNear
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: NAVY }}>
+              <svg className="w-4 h-4" fill="white" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+              </svg>
+            </div>
+            <span className="flex flex-col leading-tight">
+              <span className="text-sm font-semibold">
+                <span style={{ color: NAVY }}>Tutor</span>
+                <span style={{ color: ORANGE }}>Near</span>
+              </span>
+              <span className="hidden sm:block text-[9px] font-medium uppercase tracking-[0.08em] text-gray-400">
+                Verified tutors
+              </span>
+            </span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <span className="cursor-pointer" style={{ color: RED }}>Find Tutors</span>
+            <span className="cursor-pointer" style={{ color: ORANGE }}>Find Tutors</span>
             <span className="text-gray-600 hover:text-gray-900 cursor-pointer transition-colors">Become a Teacher</span>
             <span className="text-gray-600 hover:text-gray-900 cursor-pointer transition-colors">How it works</span>
           </div>
           <div className="flex items-center gap-5">
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Login</Link>
-            <Link href="/register" className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: RED }}>
-              Register
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  style={{ background: NAVY }}
+                  title="My Profile"
+                  aria-label="My Profile"
+                >
+                  S
+                </Link>
+                <button
+                  onClick={() => AuthService.logout()}
+                  className="px-3 py-2 rounded-xl text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-all"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Login</Link>
+                <Link href="/register" className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: ORANGE }}>
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -218,7 +299,7 @@ export default function HomeGuestPage() {
             <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
               placeholder="Location or Online" className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full" />
           </div>
-          <button className="px-7 text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0" style={{ background: RED }}>
+          <button className="px-7 text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0" style={{ background: ORANGE }}>
             Search
           </button>
         </div>
@@ -240,60 +321,28 @@ export default function HomeGuestPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
-      <div className="py-10 px-6" style={{ background: NAVY }}>
-        <div className="max-w-4xl mx-auto flex items-center justify-center divide-x divide-white/15 text-center">
-          <div className="px-8 sm:px-14">
-            <div className="text-3xl font-extrabold text-white">10,000+</div>
-            <div className="text-xs font-medium tracking-wider mt-1" style={{ color: "#9FA9C4" }}>VERIFIED TUTORS</div>
-          </div>
-          <div className="px-8 sm:px-14">
-            <div className="text-3xl font-extrabold text-white">50+</div>
-            <div className="text-xs font-medium tracking-wider mt-1" style={{ color: "#9FA9C4" }}>SUBJECTS COVERED</div>
-          </div>
-          <div className="px-8 sm:px-14">
-            <div className="text-3xl font-extrabold text-white flex items-center justify-center gap-1.5">
-              4.9 <BsStarFill className="w-4 h-4" style={{ color: "#F2B705" }} />
+      {/* ── Featured job posts ── */}
+      <section aria-label="Featured job posts" className="bg-[#F7F7FA] px-5 py-6 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          {postsLoading ? (
+            <div className="h-[220px] animate-pulse rounded-2xl bg-gray-200" />
+          ) : postsError ? (
+            <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-5 text-center text-sm text-red-700">
+              <p>Couldn&apos;t load job posts.</p>
+              <button
+                onClick={() => setPostsRetry((count) => count + 1)}
+                className="mt-2 font-semibold underline underline-offset-2"
+              >
+                Try again
+              </button>
             </div>
-            <div className="text-xs font-medium tracking-wider mt-1" style={{ color: "#9FA9C4" }}>AVERAGE RATING</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Explore Popular Subjects ── */}
-      <section className="max-w-6xl mx-auto px-6 py-16 text-center">
-        <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Explore Popular Subjects</h2>
-        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-10" style={{ background: RED }} />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {SUBJECTS.map((s) => (
-            <div key={s.name} className="bg-white border border-gray-100 rounded-2xl py-8 px-3 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all duration-200">
-              <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-lg" style={{ background: "#FBE7E0", color: RED }}>
-                {s.icon}
-              </div>
-              <div className="text-sm font-medium text-gray-700">{s.name}</div>
+          ) : posts.length > 0 ? (
+            <JobPostSlider posts={posts} />
+          ) : (
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-sm text-gray-500">
+              No job posts available right now.
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Browse by City ── */}
-      <section className="py-16 px-6" style={{ background: "#F7F7FA" }}>
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold text-center" style={{ color: NAVY }}>Browse Tutors by City</h2>
-          <p className="text-sm text-gray-500 text-center mt-2 mb-10">Find tutors actively teaching in your city, or learn online from anywhere.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {CITIES.map((c) => (
-              <div key={c.name} className="bg-white border border-gray-100 rounded-2xl p-5 flex items-center gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all duration-200">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "#FBE7E0", color: RED }}>
-                  <AiOutlineEnvironment className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-sm font-bold" style={{ color: NAVY }}>{c.name}</div>
-                  <div className="text-xs text-gray-400">{c.count}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </section>
 
@@ -305,10 +354,35 @@ export default function HomeGuestPage() {
               <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Top Rated Tutors</h2>
               <p className="text-sm text-gray-500 mt-1">Learn from the best in the field</p>
             </div>
-            <a className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: RED }}>View all tutors →</a>
+            <Link href="/student" className="text-sm font-semibold hover:underline" style={{ color: RED }}>
+              View all tutors →
+            </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {TUTORS.map((t) => <TutorCard key={t.name} t={t} />)}
+          <div
+            className="grid items-stretch gap-5"
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))" }}
+          >
+            {teachersLoading ? (
+              Array.from({ length: 4 }, (_, index) => (
+                <div key={index} className="h-64 rounded-2xl bg-white animate-pulse" />
+              ))
+            ) : teachersError ? (
+              <div role="alert" className="col-span-full rounded-2xl bg-white p-6 text-center text-sm text-red-600">
+                <p>We couldn&apos;t load tutors right now.</p>
+                <button
+                  onClick={() => setTeachersRetry((count) => count + 1)}
+                  className="mt-2 font-semibold underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : teachers.length > 0 ? (
+              teachers.map((teacher) => <TutorCard key={teacher.id} t={teacher} />)
+            ) : (
+              <p className="col-span-full rounded-2xl bg-white p-6 text-center text-sm text-gray-500">
+                No tutor profiles are available yet.
+              </p>
+            )}
           </div>
         </div>
       </section>

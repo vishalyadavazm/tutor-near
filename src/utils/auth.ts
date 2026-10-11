@@ -1,5 +1,6 @@
 export const saveToken = (token: string) => {
     localStorage.setItem("authToken", token);
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
 };
 
 export const getToken = () => {
@@ -8,6 +9,7 @@ export const getToken = () => {
 //test
 export const removeToken = () => {
     localStorage.removeItem("authToken");
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
 };
 
 export const saveRole = (role: string) => {
