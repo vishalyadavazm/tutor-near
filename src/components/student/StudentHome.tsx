@@ -722,30 +722,36 @@ export default function StudentHome() {
 
       {/* ── Topbar ── */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-5 h-16 flex items-center gap-4">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-5 h-16 flex items-center gap-2 sm:gap-4">
           {/* Logo */}
-          <Link href="/student" className="flex items-center gap-2.5 shrink-0">
+          <Link href="/student" className="flex items-center gap-2 shrink-0">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm"
               style={{ background: NAVY }}
             >
               <svg className="w-4 h-4" fill="white" viewBox="0 0 24 24">
                 <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
               </svg>
             </div>
-            <span className="text-base font-semibold hidden sm:block" style={{ color: NAVY }}>
-              TutorNear
+            <span className="hidden min-w-[74px] sm:flex sm:flex-col sm:leading-tight">
+              <span className="text-sm font-semibold">
+                <span style={{ color: NAVY }}>Tutor</span>
+                <span style={{ color: ORANGE }}>Near</span>
+              </span>
+              <span className="text-[9px] font-medium uppercase tracking-[0.08em] text-gray-400">
+                Verified tutors
+              </span>
             </span>
           </Link>
 
           {/* Inline search */}
-          <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 max-w-xl hover:border-orange-300 focus-within:border-orange-400 transition-colors">
+          <div className="min-w-0 flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 hover:border-orange-300 focus-within:border-orange-400 transition-colors">
             <AiOutlineSearch className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search by name, expertise, or course…"
+              placeholder="Search by subject, class, skill, or tutor name..."
               className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full"
             />
             {searchText && (
@@ -756,12 +762,13 @@ export default function StudentHome() {
           </div>
 
           {/* City */}
-          <div className="hidden md:flex items-center gap-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 bg-white hover:border-orange-300 transition-colors">
-            <AiOutlineEnvironment className="w-4 h-4 text-gray-400 shrink-0" />
+          <div className="flex shrink-0 items-center gap-1 border border-gray-200 rounded-xl px-2 sm:px-3 py-2 text-xs sm:text-sm text-gray-600 bg-white hover:border-orange-300 transition-colors">
+            <AiOutlineEnvironment className="w-4 h-4 text-sky-700 shrink-0" />
             <select
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              className="bg-transparent outline-none cursor-pointer"
+              aria-label="Filter tutors by city"
+              className="max-w-[86px] sm:max-w-[130px] bg-transparent outline-none cursor-pointer"
             >
               <option value="all">All cities</option>
               {cityOptions.map((c) => (
@@ -771,7 +778,7 @@ export default function StudentHome() {
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="hidden xl:flex items-center gap-2 ml-auto">
             <button className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
               <AiOutlineBell className="w-4.5 h-4.5" />
             </button>
@@ -792,6 +799,33 @@ export default function StudentHome() {
           </div>
         </div>
       </nav>
+
+      <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-4">
+        {postsLoading || postsError || posts.length > 0 ? (
+          postsLoading ? (
+            <div className="h-[220px] animate-shimmer rounded-2xl" />
+          ) : postsError ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              <span>{postsError}</span>
+              <button
+                onClick={() => setPostsRetryCount((count) => count + 1)}
+                className="font-semibold underline underline-offset-2"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <JobPostSlider posts={sortedPosts} />
+          )
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-500">
+            No job posts yet. Create the first one.
+          </div>
+        )}
+      </section>
 
       {/* ── Hero search bar ── */}
       <div className="border-b border-gray-100 bg-white">
@@ -869,55 +903,6 @@ export default function StudentHome() {
           </div>
         </div>
       </div>
-
-      <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-bold" style={{ color: NAVY }}>Latest job posts</h2>
-            <p className="mt-0.5 text-sm text-gray-500">
-              {!postsLoading && !postsError && sortedPosts.length > 0
-                ? `${sortedPosts.length} post${sortedPosts.length === 1 ? "" : "s"} total`
-                : sortedPosts.length > 2
-                  ? `Showing the 2 newest of ${sortedPosts.length} job posts.`
-                  : "Browse the latest tutoring requests from the community."}
-            </p>
-          </div>
-          {!postsLoading && !postsError && sortedPosts.length > 0 && (
-            <Link
-              href="/student/posts"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Show all posts
-            </Link>
-          )}
-        </div>
-
-        {postsLoading || postsError || posts.length > 0 ? (
-          postsLoading ? (
-            <div className="h-40 animate-shimmer rounded-2xl sm:h-44" />
-          ) : postsError ? (
-            <div
-              role="alert"
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
-              <span>{postsError}</span>
-              <button
-                onClick={() => setPostsRetryCount((count) => count + 1)}
-                className="font-semibold underline underline-offset-2"
-              >
-                Retry
-              </button>
-            </div>
-          ) : (
-            <JobPostSlider posts={sortedPosts} />
-          )
-        ) : (
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-500">
-            No job posts yet. Create the first one.
-          </div>
-        )}
-
-      </section>
 
       {/* ── Body ── */}
       <div className="max-w-[1400px] mx-auto px-5 py-4 flex gap-6 items-start">

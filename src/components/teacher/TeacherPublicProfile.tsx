@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   AiOutlineEnvironment,
   AiOutlineGlobal,
   AiOutlineMessage,
   AiOutlinePhone,
   AiOutlineShareAlt,
-  AiOutlineSearch,
   AiOutlineClose,
   AiOutlineBell,
   AiOutlineLeft,
@@ -17,7 +15,6 @@ import {
 } from "react-icons/ai";
 import { BsShieldCheck, BsHeart, BsHeartFill, BsStarFill, BsStar } from "react-icons/bs";
 import { FiBookOpen } from "react-icons/fi";
-import { MdOutlineSchool } from "react-icons/md";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import mentorService, { MentorComment, MentorDirectoryEntry } from "@/services/mentor.service";
@@ -45,7 +42,7 @@ function Avatar({
   const [broken, setBroken] = useState(false);
 
   return (
-    <div className="relative w-28 h-28 rounded-full overflow-hidden">
+    <div className="relative h-20 w-20 overflow-hidden rounded-full">
       <div
         className="absolute inset-0 flex items-center justify-center text-2xl font-black"
         style={{ background: bg, color }}
@@ -122,6 +119,58 @@ function RateWidget({
       </div>
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
+  );
+}
+
+function AboutContactCard({
+  about,
+  onInquiry,
+  onDemo,
+}: {
+  about: string;
+  onInquiry: () => void;
+  onDemo: () => void;
+}) {
+  return (
+    <section className="rounded-xl border border-[#E6EBF2] bg-white p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+          <FiBookOpen className="h-3.5 w-3.5" />
+        </span>
+        <h2 className="text-xs font-semibold text-[#15213D]">About Tutor</h2>
+      </div>
+      <p className="rounded-lg bg-[#F7F9FC] p-3 text-xs leading-relaxed text-gray-600">
+        {about || "This tutor hasn't added a bio yet."}
+      </p>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 text-[11px]">
+        <span className="text-gray-500">Contact Number</span>
+        <span className="inline-flex items-center gap-1 font-semibold text-gray-700">
+          <AiOutlinePhone className="h-3 w-3" />
+          {CONTACT_PHONE}
+        </span>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+        <span className="text-gray-500">Hourly Rate</span>
+        <span className="font-semibold text-gray-700">Contact for rates</span>
+      </div>
+      <div className="mt-3 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onInquiry}
+          className="w-full rounded-lg px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: ORANGE }}
+        >
+          Send Inquiry
+        </button>
+        <button
+          type="button"
+          onClick={onDemo}
+          className="w-full rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+        >
+          Book Demo
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -207,7 +256,6 @@ function MoreProfilesSidebar({
 
 /* ─── Main component ─────────────────────────────── */
 export default function TeacherPublicProfile({ teacherId }: { teacherId: number }) {
-  const router = useRouter();
 
   const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +276,6 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const [editCommentError, setEditCommentError] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
 
-  const [searchText, setSearchText] = useState("");
   const [contactType, setContactType] = useState<"inquiry" | "demo" | "message">("inquiry");
   const [showContact, setShowContact] = useState(false);
 
@@ -306,11 +353,6 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   function openContact(type: "inquiry" | "demo" | "message") {
     setContactType(type);
     setShowContact(true);
-  }
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    router.push("/student");
   }
 
   async function refreshProfiles() {
@@ -436,29 +478,11 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
               <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
             </svg>
           </div>
-          <span className="text-base font-semibold hidden sm:block" style={{ color: NAVY }}>
-            TutorNear
+          <span className="hidden text-base font-semibold sm:block">
+            <span style={{ color: NAVY }}>Tutor</span>
+            <span style={{ color: ORANGE }}>Near</span>
           </span>
         </Link>
-
-        <form
-          onSubmit={handleSearch}
-          className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 max-w-xl hover:border-orange-300 focus-within:border-orange-400 transition-colors"
-        >
-          <AiOutlineSearch className="w-4 h-4 text-gray-400 shrink-0" />
-          <input
-            type="text"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Search by subject, teacher name, or skill…"
-            className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full"
-          />
-          {searchText && (
-            <button type="button" onClick={() => setSearchText("")} className="text-gray-400 hover:text-gray-600">
-              <AiOutlineClose className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </form>
 
         <div className="flex items-center gap-2 ml-auto">
           <button className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
@@ -481,10 +505,23 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     </nav>
   );
 
+  const DashboardLink = (
+    <div className="mx-auto max-w-[1400px] px-5 pt-4">
+      <Link
+        href="/student"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors hover:text-[#E8621A]"
+      >
+        <span aria-hidden="true">←</span>
+        Back to dashboard
+      </Link>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 font-sans">
         {Topbar}
+        {DashboardLink}
         <div className="max-w-[1400px] mx-auto px-5 py-16 text-center text-sm text-gray-400">
           Loading profile…
         </div>
@@ -496,6 +533,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     return (
       <div className="min-h-screen bg-gray-100 font-sans">
         {Topbar}
+        {DashboardLink}
         <div className="max-w-[1400px] mx-auto px-5 py-16 text-center">
           <div className="text-4xl mb-3">🔍</div>
           <div className="text-base font-semibold text-gray-700 mb-1">
@@ -523,24 +561,25 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
       {Topbar}
+      {DashboardLink}
 
       {/* ── Body: two-column layout ── */}
-      <div className="max-w-[1400px] mx-auto px-5 py-5">
-        <div className="flex gap-5 items-start">
+      <div className="mx-auto max-w-[1280px] px-4 pb-8 pt-3 sm:px-5">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_300px]">
 
           {/* ── LEFT: main profile content ── */}
-          <div className="flex-1 min-w-0 flex flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-4">
 
             {/* Cover + Profile card */}
-            <div className="bg-white rounded-2xl shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-[#E6EBF2] bg-white shadow-sm">
 
               {/* Cover banner */}
               <div
-                className="relative h-32 rounded-t-2xl overflow-hidden"
+                className="relative h-28 overflow-hidden sm:h-32"
                 style={
                   teacher.bannerUrl
                     ? undefined
-                    : { background: "linear-gradient(135deg, #0A1628 0%, #1A2F5E 55%, #0D1F45 100%)" }
+                    : { background: "repeating-linear-gradient(90deg, #0A1628 0px, #0A1628 12px, #17294B 14px, #0A1628 25px)" }
                 }
               >
                 {teacher.bannerUrl ? (
@@ -564,12 +603,18 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     />
                   ))
                 )}
+                {teacher.verified && (
+                  <span className="absolute right-3 top-3 rounded-full border border-emerald-300/20 bg-emerald-600/80 px-2.5 py-1 text-[10px] font-medium text-white">
+                    <BsShieldCheck className="mr-1 inline h-3 w-3" />
+                    Verified Educator
+                  </span>
+                )}
               </div>
 
               {/* Profile info */}
-              <div className="px-6 pb-6">
+              <div className="px-4 pb-4 sm:px-5">
                 {/* Avatar + action row */}
-                <div className="flex items-end justify-between -mt-14 mb-4">
+                <div className="mb-3 flex items-end justify-between -mt-12 sm:-mt-14">
                   <div
                     className="relative z-10 rounded-full shrink-0 shadow-xl"
                     style={{
@@ -577,7 +622,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                       padding: "3px",
                     }}
                   >
-                    <div className="rounded-full bg-white" style={{ padding: "3px" }}>
+                    <div className="rounded-full bg-white p-[3px]">
                       <Avatar
                         photoUrl={teacher.photoUrl}
                         name={teacher.name}
@@ -589,41 +634,49 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex items-center gap-2 mt-14">
+                  <div className="mt-12 flex items-center gap-1.5 sm:gap-2">
                     <button
                       onClick={() => openContact("message")}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-700 transition-all hover:bg-gray-50 sm:px-3 sm:text-sm"
                     >
                       <AiOutlineMessage className="w-4 h-4" />
-                      Message
+                      <span className="hidden sm:inline">Message</span>
                     </button>
                     <button
                       onClick={handleToggleLike}
                       disabled={liking}
-                      className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center transition-all hover:border-red-200 disabled:opacity-50"
+                      aria-label={teacher.isLiked ? "Remove tutor from saved" : "Save tutor"}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 transition-all hover:border-red-200 disabled:opacity-50"
                     >
                       {teacher.isLiked
                         ? <BsHeartFill className="w-4 h-4 text-red-500" />
                         : <BsHeart className="w-4 h-4 text-gray-400" />}
                     </button>
-                    <button className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all">
+                    <button
+                      type="button"
+                      aria-label="Share tutor profile"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-all hover:bg-gray-50"
+                    >
                       <AiOutlineShareAlt className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Name + info + summary */}
-                <div className="flex gap-6 flex-col lg:flex-row">
+                <div className="flex flex-col gap-4">
 
                   {/* Left: name, location */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h1 className="text-xl font-bold text-gray-900">{teacher.name}</h1>
+                      <h1 className="text-lg font-bold text-gray-900 sm:text-xl">{teacher.name}</h1>
                       {teacher.verified && (
-                        <BsShieldCheck className="w-5 h-5 text-blue-500 shrink-0" />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                          <BsShieldCheck className="h-3 w-3" />
+                          Verified Educator
+                        </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5">{teacher.expertise || "Tutor"}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">{teacher.expertise || "Tutor"}</p>
                     <div className="mt-2">
                       <StarRating rating={teacher.rating} reviewCount={teacher.reviewCount} />
                     </div>
@@ -638,7 +691,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     {likeError && <p className="text-xs text-red-500 mt-1">{likeError}</p>}
 
                     {/* Location + experience */}
-                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 flex-wrap">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1.5">
                         <AiOutlineEnvironment className="w-4 h-4 text-gray-400" />
                         {[teacher.city, teacher.state, teacher.country].filter(Boolean).join(", ") || "Location not specified"}
@@ -661,60 +714,9 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     )}
                   </div>
 
-                  {/* Right: About + contact */}
-                  <div
-                    className="lg:w-64 shrink-0 rounded-xl border border-blue-100 p-4"
-                    style={{ background: "#F0F7FF" }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <FiBookOpen className="w-3.5 h-3.5 text-blue-600" />
-                      </div>
-                      <span className="text-xs font-semibold text-blue-800">About</span>
-                    </div>
-                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-6">
-                      {teacher.about || "This tutor hasn't added a bio yet."}
-                    </p>
-                    <div className="flex items-center gap-2 mt-3 text-sm font-semibold text-gray-700">
-                      <AiOutlinePhone className="w-4 h-4 shrink-0" />
-                      {CONTACT_PHONE}
-                    </div>
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-blue-100">
-                      <button
-                        onClick={() => openContact("inquiry")}
-                        className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
-                        style={{ background: ORANGE }}
-                      >
-                        Send Inquiry
-                      </button>
-                      <button
-                        onClick={() => openContact("demo")}
-                        className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all"
-                      >
-                        Book Demo
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Qualifications */}
-            {teacher.qualifications.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm px-6 py-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <MdOutlineSchool className="w-4 h-4 text-gray-500" />
-                  <h2 className="text-sm font-semibold" style={{ color: NAVY }}>Qualifications</h2>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {teacher.qualifications.map((q) => (
-                    <span key={q} className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
-                      {q}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Stats bar */}
             <div className="bg-white rounded-2xl shadow-sm">
@@ -734,6 +736,48 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
               </div>
             </div>
 
+            <section className="rounded-xl border border-[#E6EBF2] bg-white p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <FiBookOpen className="h-3.5 w-3.5" />
+                  </span>
+                  <h2 className="text-sm font-semibold text-gray-900">About &amp; Teaching</h2>
+                </div>
+                {teacher.verified && (
+                  <span className="text-[10px] font-medium text-blue-700">ID Verified</span>
+                )}
+              </div>
+              <p className="whitespace-pre-line py-4 text-xs leading-6 text-gray-600">
+                {teacher.about || "This tutor hasn't added a bio yet."}
+              </p>
+              {teacher.qualifications.length > 0 && (
+                <div className="border-t border-gray-100 pt-3">
+                  <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                    Qualifications
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {teacher.qualifications.map((qualification) => (
+                      <span
+                        key={qualification}
+                        className="rounded-full bg-gray-50 px-2.5 py-1 text-[10px] text-gray-600"
+                      >
+                        {qualification}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <div className="lg:hidden">
+              <AboutContactCard
+                about={teacher.about}
+                onInquiry={() => openContact("inquiry")}
+                onDemo={() => openContact("demo")}
+              />
+            </div>
+
             {/* Comments */}
             <button
               type="button"
@@ -751,7 +795,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
 
             {showComments && (
               <div
-                className="fixed inset-0 z-[190] flex items-center justify-center bg-black/50 p-3 sm:p-6"
+                className="fixed inset-0 z-[190] flex items-center justify-center bg-slate-900/60 p-3 backdrop-blur-sm sm:p-6"
                 onClick={(event) => {
                   if (event.target === event.currentTarget) setShowComments(false);
                 }}
@@ -760,20 +804,20 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                   role="dialog"
                   aria-modal="true"
                   aria-labelledby="teacher-comments-title"
-                  className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
+                  className="flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
                 >
-                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 py-3.5">
                     <div>
                       <div>
-                        <h2 id="teacher-comments-title" className="text-base font-semibold text-gray-900">Comments</h2>
-                        <p className="mt-0.5 text-sm text-gray-500">{teacher.name}</p>
+                        <h2 id="teacher-comments-title" className="text-sm font-semibold text-gray-900">Comments</h2>
+                        <p className="mt-0.5 text-[10px] text-gray-500">{teacher.name}</p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowComments(false)}
                       aria-label="Close comments"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                     >
                       <AiOutlineClose className="h-4 w-4" />
                     </button>
@@ -807,21 +851,21 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     <p className="mt-2 text-sm font-medium text-gray-700">No comments yet</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="flex flex-col gap-2.5">
                     {comments.map((item) => {
                       const author = item.commented_by?.name || item.created_by?.name || "Student";
 
                       return (
-                        <article key={item.id} className="py-4 first:pt-0 last:pb-0">
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-800">
+                        <article key={item.id} className="rounded-xl border border-[#EDF0F5] bg-[#FAFBFD] p-3">
+                          <div className="flex items-start gap-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[11px] font-semibold text-blue-800">
                               {author.trim().slice(0, 1).toUpperCase() || "S"}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                <span className="text-sm font-semibold text-gray-900">{author}</span>
+                                <span className="text-[11px] font-semibold text-gray-900">{author}</span>
                                 <span className="text-gray-300" aria-hidden="true">·</span>
-                                <time className="text-xs text-gray-500" dateTime={item.created_t}>
+                                <time className="text-[10px] text-gray-400" dateTime={item.created_t}>
                                   {new Date(item.created_t).toLocaleDateString(undefined, {
                                     month: "short",
                                     day: "numeric",
@@ -829,13 +873,13 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                                   })}
                                 </time>
                                 {item.is_edited && (
-                                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">Edited</span>
+                                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium text-gray-500">Edited</span>
                                 )}
                                 {item.is_editable && editingCommentId !== item.id && (
                                   <button
                                     type="button"
                                     onClick={() => startEditingComment(item)}
-                                    className="ml-auto rounded-md px-2 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                                    className="ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium text-blue-700 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                                   >
                                     Edit
                                   </button>
@@ -877,7 +921,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                                   </div>
                                 </div>
                               ) : (
-                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">{item.comment}</p>
+                                <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-gray-700">{item.comment}</p>
                               )}
                             </div>
                           </div>
@@ -888,19 +932,19 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                 )}
 
                 {comments.length > 0 && !commentsLoading && !commentsError && (
-                  <nav aria-label="Comments pagination" className="mt-4 border-t border-gray-100 pt-4">
+                  <nav aria-label="Comments pagination" className="mt-3 border-t border-gray-100 pt-3">
                     <div className="flex items-center justify-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleCommentPageChange(commentsPage - 1)}
                         disabled={commentsPage <= 1 || changingCommentPage}
-                        className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-60"
+                        className="inline-flex h-7 items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 text-[10px] font-medium text-gray-600 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-60"
                       >
                         <AiOutlineLeft className="h-3.5 w-3.5" aria-hidden="true" />
                         Previous
                       </button>
                       <div className="min-w-20 text-center" aria-live="polite">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-[10px] text-gray-600">
                           Page <span className="font-semibold text-gray-900">{commentsPage}</span>
                         </p>
                         {changingCommentPage && <p className="mt-0.5 text-xs text-gray-500">Loading…</p>}
@@ -912,7 +956,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                         type="button"
                         onClick={() => handleCommentPageChange(commentsPage + 1)}
                         disabled={!commentsHaveMore || changingCommentPage}
-                        className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-60"
+                        className="inline-flex h-7 items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 text-[10px] font-medium text-gray-600 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-60"
                       >
                         Next
                         <AiOutlineRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -922,23 +966,25 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                 )}
                   </div>
 
-                  <form onSubmit={handleSubmitComment} className="shrink-0 border-t border-gray-200 bg-gray-50 px-5 py-4">
-                    <label htmlFor="teacher-comment" className="mb-2 block text-sm font-semibold text-gray-800">
+                  <form onSubmit={handleSubmitComment} className="shrink-0 border-t border-gray-100 bg-white px-5 py-3.5">
+                    <label htmlFor="teacher-comment" className="mb-2 block text-[10px] font-semibold uppercase tracking-wide text-gray-800">
                       Add a comment
                     </label>
-                    <div className="flex items-end gap-3">
+                    <div>
                       <textarea
                         id="teacher-comment"
                         value={commentDraft}
                         onChange={(event) => setCommentDraft(event.target.value)}
                         placeholder="Write your comment"
-                        rows={2}
-                        className="min-h-11 w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm leading-5 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                        rows={3}
+                        className="min-h-16 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-[11px] leading-5 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                       />
+                    </div>
+                    <div className="mt-2 flex justify-end">
                       <button
                         type="submit"
                         disabled={!commentDraft.trim() || submittingComment}
-                        className="flex h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-8 shrink-0 items-center gap-2 rounded-lg px-4 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         style={{ background: ORANGE }}
                       >
                         {submittingComment ? "Posting…" : "Post"}
@@ -955,13 +1001,18 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
           </div>
 
           {/* ── RIGHT: sticky sidebar ── */}
-          <div className="hidden xl:block w-72 shrink-0">
+          <aside className="hidden lg:block min-w-0">
             <div className="sticky top-20 flex flex-col gap-4">
+              <AboutContactCard
+                about={teacher.about}
+                onInquiry={() => openContact("inquiry")}
+                onDemo={() => openContact("demo")}
+              />
               <MoreProfilesSidebar currentId={teacher.id} teachers={teachers} />
 
               {/* Quick links card */}
-              <div className="bg-white rounded-2xl shadow-sm p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Quick Links</h3>
+              <div className="rounded-xl border border-[#E6EBF2] bg-white p-4 shadow-sm">
+                <h3 className="mb-3 text-[10px] font-bold uppercase tracking-wide text-gray-500">Quick Links</h3>
                 <div className="flex flex-col gap-1">
                   {[
                     { label: "Browse all tutors", href: "/student", emoji: "🔍" },
@@ -970,7 +1021,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     <Link
                       key={l.label}
                       href={l.href}
-                      className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all"
+                      className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-xs text-gray-600 transition-all hover:bg-gray-50 hover:text-blue-600"
                     >
                       <span>{l.emoji}</span>
                       {l.label}
@@ -979,7 +1030,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                 </div>
               </div>
             </div>
-          </div>
+          </aside>
 
         </div>
       </div>

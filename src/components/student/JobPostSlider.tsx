@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import JobPostBanner from "@/components/student/JobPostBanner";
 import type { StudentPost } from "@/services/student.service";
 
@@ -36,33 +35,19 @@ export default function JobPostSlider({ posts }: { posts: StudentPost[] }) {
       aria-roledescription="carousel"
       className="relative"
     >
-      <Link
-        href="/student/posts"
-        aria-label={`View all job posts. Featured post: ${activePost.title}`}
-        className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-      >
-        <JobPostBanner post={activePost} />
-      </Link>
+      <JobPostBanner post={activePost} />
 
       {posts.length > 1 && (
-        <>
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2">
           <button
             type="button"
             onClick={showPrevious}
             aria-label="Show previous job post"
-            className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-semibold text-[#15213D] shadow transition-colors hover:bg-white"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-lg font-semibold text-[#15213D] shadow transition-colors hover:bg-white"
           >
             ‹
           </button>
-          <button
-            type="button"
-            onClick={showNext}
-            aria-label="Show next job post"
-            className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-semibold text-[#15213D] shadow transition-colors hover:bg-white"
-          >
-            ›
-          </button>
-          <div className="absolute bottom-3 right-4 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {posts.map((post, index) => (
               <button
                 key={post.id}
@@ -76,7 +61,15 @@ export default function JobPostSlider({ posts }: { posts: StudentPost[] }) {
               />
             ))}
           </div>
-        </>
+          <button
+            type="button"
+            onClick={showNext}
+            aria-label="Show next job post"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-lg font-semibold text-[#15213D] shadow transition-colors hover:bg-white"
+          >
+            ›
+          </button>
+        </div>
       )}
     </div>
   );
