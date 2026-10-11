@@ -22,6 +22,8 @@ import {
   FaRupeeSign,
   FaClock,
   FaUserCheck,
+  FaBriefcase,
+  FaGraduationCap,
 } from "react-icons/fa";
 import mentorService from "@/services/mentor.service";
 import studentService, { type StudentPost } from "@/services/student.service";
@@ -120,8 +122,24 @@ function TutorCard({ t, index }: { t: DisplayTeacher; index: number }) {
       <div className="flex flex-1 flex-col p-4">
         <h3 className="text-sm font-bold truncate" style={{ color: NAVY }}>{t.name}</h3>
         <p className="min-h-8 text-[11px] font-semibold uppercase tracking-wide mt-1 line-clamp-2" style={{ color: RED }}>
-          {t.expertise || "Tutor"} · {formatExperience(t.experienceYears)}
+          {t.expertise || "Tutor"}
         </p>
+        <div className="mt-2.5 space-y-1.5 text-xs text-gray-600">
+          <div className="flex items-start gap-2">
+            <FaBriefcase className="mt-0.5 h-3 w-3 shrink-0 text-gray-400" aria-hidden="true" />
+            <span>
+              <span className="font-semibold text-gray-700">Experience:</span>{" "}
+              {formatExperience(t.experienceYears)}
+            </span>
+          </div>
+          <div className="flex items-start gap-2">
+            <FaGraduationCap className="mt-0.5 h-3 w-3 shrink-0 text-gray-400" aria-hidden="true" />
+            <span className="line-clamp-2">
+              <span className="font-semibold text-gray-700">Education:</span>{" "}
+              {t.qualifications.length > 0 ? t.qualifications.join(", ") : "Not specified"}
+            </span>
+          </div>
+        </div>
         <p className="min-h-10 text-xs text-gray-500 mt-2.5 leading-relaxed line-clamp-2">
           {t.about || t.courses.join(", ") || "View this tutor's profile to learn more."}
         </p>
