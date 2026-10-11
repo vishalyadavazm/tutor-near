@@ -870,21 +870,31 @@ export default function StudentHome() {
         </div>
       </div>
 
-      <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-6">
-        <div className="mb-4">
+      <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold" style={{ color: NAVY }}>Latest job posts</h2>
             <p className="mt-0.5 text-sm text-gray-500">
-              {sortedPosts.length > 2
-                ? `Showing the 2 newest of ${sortedPosts.length} job posts.`
-                : "Browse the latest tutoring requests from the community."}
+              {!postsLoading && !postsError && sortedPosts.length > 0
+                ? `${sortedPosts.length} post${sortedPosts.length === 1 ? "" : "s"} total`
+                : sortedPosts.length > 2
+                  ? `Showing the 2 newest of ${sortedPosts.length} job posts.`
+                  : "Browse the latest tutoring requests from the community."}
             </p>
           </div>
+          {!postsLoading && !postsError && sortedPosts.length > 0 && (
+            <Link
+              href="/student/posts"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Show all posts
+            </Link>
+          )}
         </div>
 
         {postsLoading || postsError || posts.length > 0 ? (
           postsLoading ? (
-            <div className="h-52 animate-shimmer rounded-2xl sm:h-60" />
+            <div className="h-40 animate-shimmer rounded-2xl sm:h-44" />
           ) : postsError ? (
             <div
               role="alert"
@@ -907,26 +917,10 @@ export default function StudentHome() {
           </div>
         )}
 
-        {!postsLoading && !postsError && sortedPosts.length > 0 && (
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:p-5">
-            <div>
-              <h3 className="text-sm font-semibold" style={{ color: NAVY }}>All job posts</h3>
-              <p className="mt-0.5 text-xs text-gray-500">
-                {sortedPosts.length} post{sortedPosts.length === 1 ? "" : "s"} total
-              </p>
-            </div>
-            <Link
-              href="/student/posts"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Show all posts
-            </Link>
-          </div>
-        )}
       </section>
 
       {/* ── Body ── */}
-      <div className="max-w-[1400px] mx-auto px-5 py-6 flex gap-6 items-start">
+      <div className="max-w-[1400px] mx-auto px-5 py-4 flex gap-6 items-start">
 
         {/* ── Filter sidebar (desktop) ── */}
         <aside className="hidden lg:flex lg:flex-col gap-4 w-60 shrink-0 sticky top-24 self-start">
