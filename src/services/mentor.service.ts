@@ -207,9 +207,20 @@ class MentorService {
     return { profile: null, basicUser: data?.user ?? null };
   }
 
-  async getAllProfiles(): Promise<MentorDirectoryEntry[]> {
-    const res = await api.get<ListResponse<MentorDirectoryEntry>>(API.MENTOR_ALL_PROFILES);
+  async getAllProfiles(options?: { page?: number; perPage?: number }): Promise<MentorDirectoryEntry[]> {
+    const res = await api.get<ListResponse<MentorDirectoryEntry>>(API.MENTOR_ALL_PROFILES, {
+      params: options
+        ? { page: options.page ?? 1, per_page: options.perPage ?? 6 }
+        : undefined,
+    });
     return res.data.data;
+  }
+
+  async getProfileById(mentorId: number): Promise<MentorDirectoryEntry | null> {
+    const res = await api.get<ListResponse<MentorDirectoryEntry>>(API.MENTOR_ALL_PROFILES, {
+      params: { filter: `id:eq:${mentorId}` },
+    });
+    return res.data.data.find((entry) => entry.id === mentorId) ?? null;
   }
 
   async getMentorComments(mentorId: number, page = 1): Promise<{

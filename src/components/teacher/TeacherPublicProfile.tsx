@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   AiOutlineEnvironment,
@@ -174,90 +174,87 @@ function AboutContactCard({
   );
 }
 
-/* ── "More profiles" sidebar card ─────────────── */
 function MoreProfilesSidebar({
   currentId,
   teachers,
+  error,
 }: {
   currentId: number;
   teachers: DisplayTeacher[];
+  error: string | null;
 }) {
-  const suggestions = teachers.filter((t) => t.id !== currentId).slice(0, 5);
+  const suggestions = teachers.filter((teacher) => teacher.id !== currentId).slice(0, 3);
 
-  if (suggestions.length === 0) return null;
+  if (suggestions.length === 0 && !error) return null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-gray-100">
-        <h3 className="text-sm font-bold text-gray-800">More profiles for you</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Tutors you might like</p>
+    <section className="overflow-hidden rounded-xl border border-[#E6EBF2] bg-white shadow-sm">
+      <div className="border-b border-gray-100 px-4 py-3">
+        <h2 className="text-xs font-semibold text-gray-900">More profiles for you</h2>
+        <p className="mt-0.5 text-[10px] text-gray-500">Tutors you might like</p>
       </div>
-
-      {/* List */}
-      <div className="divide-y divide-gray-50">
-        {suggestions.map((t) => (
-          <div key={t.id} className="px-4 py-3.5 hover:bg-gray-50 transition-colors group">
-            <div className="flex items-start gap-3">
-              {/* Avatar */}
-              {t.photoUrl ? (
-                <img
-                  src={t.photoUrl}
-                  alt={t.name}
-                  className="w-11 h-11 rounded-xl object-cover shrink-0"
-                />
-              ) : (
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
-                  style={{ background: t.bg, color: t.color }}
-                >
-                  {t.initials}
-                </div>
-              )}
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-sm font-semibold text-gray-900 truncate">{t.name}</span>
-                  {t.verified && (
-                    <BsShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  )}
-                </div>
-                <p className="text-[11px] text-gray-400 truncate mt-0.5">
-                  {t.expertise || "Tutor"} · {t.city || "—"}
-                </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[11px] text-gray-400">{formatExperience(t.experienceYears)}</span>
-                  <Link
-                    href={`/teacher/${t.id}`}
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-all"
+      {error ? (
+        <p role="alert" className="px-4 py-3 text-[10px] text-red-600">{error}</p>
+      ) : (
+        <>
+          <div className="divide-y divide-gray-100">
+            {suggestions.map((suggestion) => (
+              <article key={suggestion.id} className="flex items-center gap-2.5 px-3 py-3">
+                {suggestion.photoUrl ? (
+                  <img
+                    src={suggestion.photoUrl}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                  />
+                ) : (
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-semibold"
+                    style={{ background: suggestion.bg, color: suggestion.color }}
                   >
-                    View Profile
-                  </Link>
+                    {suggestion.initials}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold text-gray-900">
+                    {suggestion.name}
+                    {suggestion.verified && (
+                      <BsShieldCheck className="ml-1 inline h-3 w-3 text-blue-600" />
+                    )}
+                  </p>
+                  <p className="truncate text-[10px] text-gray-500">
+                    {suggestion.expertise || "Tutor"} · {suggestion.city || "—"}
+                  </p>
+                  <p className="mt-1 text-[10px] text-gray-500">
+                    {formatExperience(suggestion.experienceYears)}
+                  </p>
                 </div>
-              </div>
-            </div>
+                <Link
+                  href={`/teacher/${suggestion.id}`}
+                  className="shrink-0 rounded-md border border-gray-200 px-2 py-1 text-[9px] font-semibold text-gray-700 transition-colors hover:border-orange-200 hover:text-[#E8621A]"
+                >
+                  View Profile
+                </Link>
+              </article>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 text-center">
-        <Link
-          href="/student"
-          className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          Show all tutors →
-        </Link>
-      </div>
-    </div>
+          <Link
+            href="/student"
+            className="block border-t border-gray-100 px-4 py-2.5 text-center text-[10px] font-semibold text-[#E8621A] hover:bg-orange-50"
+          >
+            Show all tutors →
+          </Link>
+        </>
+      )}
+    </section>
   );
 }
 
 /* ─── Main component ─────────────────────────────── */
 export default function TeacherPublicProfile({ teacherId }: { teacherId: number }) {
 
-  const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
+  const [profile, setProfile] = useState<MentorDirectoryEntry | null>(null);
+  const [recommendations, setRecommendations] = useState<MentorDirectoryEntry[]>([]);
+  const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [comments, setComments] = useState<MentorComment[]>([]);
@@ -289,8 +286,16 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
 
     (async () => {
       try {
-        const profilesRes = await mentorService.getAllProfiles();
-        if (!cancelled) setProfiles(profilesRes);
+        const profileRes = await mentorService.getProfileById(teacherId);
+        if (cancelled) return;
+        setProfile(profileRes);
+
+        try {
+          const recommendationsRes = await mentorService.getAllProfiles({ perPage: 6 });
+          if (!cancelled) setRecommendations(recommendationsRes);
+        } catch {
+          if (!cancelled) setRecommendationsError("Couldn't load more tutor profiles.");
+        }
       } catch {
         if (!cancelled) setLoadError("Couldn't load this profile. Please refresh the page.");
       } finally {
@@ -301,7 +306,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [teacherId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -344,20 +349,19 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     };
   }, [showComments]);
 
-  const teachers = useMemo(
-    () => profiles.map(toDisplayTeacherFromDirectory).filter((t): t is DisplayTeacher => t !== null),
-    [profiles],
-  );
-  const teacher = teachers.find((t) => t.id === teacherId);
+  const teacher = profile ? toDisplayTeacherFromDirectory(profile) : null;
+  const recommendedTeachers = recommendations
+    .map(toDisplayTeacherFromDirectory)
+    .filter((recommended): recommended is DisplayTeacher => recommended !== null);
 
   function openContact(type: "inquiry" | "demo" | "message") {
     setContactType(type);
     setShowContact(true);
   }
 
-  async function refreshProfiles() {
-    const refreshed = await mentorService.getAllProfiles();
-    setProfiles(refreshed);
+  async function refreshProfile() {
+    const refreshed = await mentorService.getProfileById(teacherId);
+    setProfile(refreshed);
   }
 
   async function handleToggleLike() {
@@ -365,7 +369,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     setLikeError(null);
     try {
       await mentorService.toggleLike(teacherId, !!teacher?.isLiked);
-      await refreshProfiles();
+      await refreshProfile();
     } catch (err) {
       setLikeError(err instanceof Error ? err.message : "Couldn't update like.");
     } finally {
@@ -378,7 +382,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     setRateError(null);
     try {
       await mentorService.rateMentor(teacherId, value);
-      await refreshProfiles();
+      await refreshProfile();
     } catch (err) {
       setRateError(err instanceof Error ? err.message : "Couldn't submit rating.");
     } finally {
@@ -652,6 +656,13 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                         ? <BsHeartFill className="w-4 h-4 text-red-500" />
                         : <BsHeart className="w-4 h-4 text-gray-400" />}
                     </button>
+                    <span
+                      className="min-w-5 text-center text-[11px] font-medium text-gray-500"
+                      aria-label={`${teacher.totalLikes} likes`}
+                      title={`${teacher.totalLikes} likes`}
+                    >
+                      {teacher.totalLikes}
+                    </span>
                     <button
                       type="button"
                       aria-label="Share tutor profile"
@@ -778,20 +789,149 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
               />
             </div>
 
-            {/* Comments */}
-            <button
-              type="button"
-              onClick={() => setShowComments(true)}
-              className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 sm:px-5"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-700">
-                <AiOutlineMessage className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-gray-900">Comments</span>
-              </span>
-              <span className="shrink-0 text-sm font-semibold text-blue-700">View comments</span>
-            </button>
+            {/* Student reviews and community comments */}
+            <section className="rounded-xl border border-[#E6EBF2] bg-white p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <BsStarFill className="h-3.5 w-3.5" />
+                  </span>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Student &amp; Parent Reviews</h2>
+                    <p className="mt-0.5 text-[10px] text-gray-500">
+                      Based on {teacher.reviewCount} rating{teacher.reviewCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5" aria-label={
+                  teacher.rating === null
+                    ? "No ratings yet"
+                    : `Rated ${teacher.rating.toFixed(1)} out of 5`
+                }>
+                  {teacher.rating !== null && (
+                    <>
+                      <span className="text-base font-bold text-[#15213D]">
+                        {teacher.rating.toFixed(1)}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <BsStarFill
+                            key={star}
+                            className={`h-3 w-3 ${star <= Math.round(teacher.rating!) ? "text-amber-400" : "text-gray-200"}`}
+                          />
+                        ))}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl bg-[#F0F5FF] p-3 sm:p-4">
+                {teacher.rating === null ? (
+                  <p className="text-center text-xs text-gray-500">
+                    No ratings yet. Be the first to rate this tutor.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 sm:justify-start">
+                    <div className="min-w-28 text-center sm:border-r sm:border-blue-100 sm:pr-8">
+                      <div className="text-3xl font-bold leading-none text-[#15213D]">
+                        {teacher.rating.toFixed(1)}
+                      </div>
+                      <div className="mt-1 flex justify-center gap-0.5" aria-hidden="true">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <BsStarFill
+                            key={star}
+                            className={`h-3.5 w-3.5 ${star <= Math.round(teacher.rating!) ? "text-amber-400" : "text-blue-100"}`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-1 text-[10px] text-gray-500">
+                        {teacher.reviewCount} rating{teacher.reviewCount === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <p className="max-w-xs text-[11px] leading-5 text-gray-600">
+                      Ratings are shared by students and families in the TutorNear community.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2.5">
+                {commentsLoading ? (
+                  <div role="status" className="animate-pulse space-y-2">
+                    <div className="h-20 rounded-xl bg-gray-100" />
+                    <div className="h-20 rounded-xl bg-gray-100" />
+                  </div>
+                ) : commentsError ? (
+                  <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {commentsError}
+                  </p>
+                ) : comments.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-gray-200 px-3 py-5 text-center text-xs text-gray-500">
+                    No community comments yet.
+                  </p>
+                ) : (
+                  comments.slice(0, 2).map((item) => {
+                    const author = item.commented_by?.name || item.created_by?.name || "Student";
+                    return (
+                      <article key={item.id} className="rounded-xl bg-[#F0F5FF] p-3 sm:p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-semibold text-white">
+                            {author.trim().slice(0, 1).toUpperCase() || "S"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[11px] font-semibold text-gray-900">{author}</p>
+                            <p className="text-[10px] text-gray-500">
+                              {new Date(item.created_t).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </p>
+                          </div>
+                          {item.is_edited && (
+                            <span className="rounded bg-white/80 px-1.5 py-0.5 text-[9px] text-gray-500">
+                              Edited
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 whitespace-pre-wrap text-xs italic leading-relaxed text-gray-700">
+                          “{item.comment}”
+                        </p>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#E7EFFF] p-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#E8621A]">
+                    <AiOutlineMessage className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-semibold text-gray-900">Community Comments</h3>
+                    <p className="text-[10px] text-gray-500">Read or share a comment about this tutor.</p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowComments(true)}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-[10px] font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    Add a comment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowComments(true)}
+                    className="rounded-lg bg-[#E8621A] px-3 py-2 text-[10px] font-semibold text-white transition-colors hover:bg-orange-700"
+                  >
+                    View all comments
+                  </button>
+                </div>
+              </div>
+            </section>
 
             {showComments && (
               <div
@@ -1008,7 +1148,11 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                 onInquiry={() => openContact("inquiry")}
                 onDemo={() => openContact("demo")}
               />
-              <MoreProfilesSidebar currentId={teacher.id} teachers={teachers} />
+              <MoreProfilesSidebar
+                currentId={teacher.id}
+                teachers={recommendedTeachers}
+                error={recommendationsError}
+              />
 
               {/* Quick links card */}
               <div className="rounded-xl border border-[#E6EBF2] bg-white p-4 shadow-sm">
