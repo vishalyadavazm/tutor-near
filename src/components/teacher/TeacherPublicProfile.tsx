@@ -638,7 +638,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                   </div>
 
                   {/* Action buttons */}
-                  <div className="mt-12 flex items-center gap-1.5 sm:gap-2">
+                  <div className="mt-14 flex items-center gap-1.5 sm:mt-16 sm:gap-2">
                     <button
                       onClick={() => openContact("message")}
                       className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-700 transition-all hover:bg-gray-50 sm:px-3 sm:text-sm"
@@ -649,20 +649,14 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                     <button
                       onClick={handleToggleLike}
                       disabled={liking}
-                      aria-label={teacher.isLiked ? "Remove tutor from saved" : "Save tutor"}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 transition-all hover:border-red-200 disabled:opacity-50"
+                      aria-label={`${teacher.isLiked ? "Remove tutor from saved" : "Save tutor"}; ${teacher.totalLikes} likes`}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-3 text-[11px] font-semibold text-rose-600 transition-all hover:border-rose-200 hover:bg-rose-100 disabled:opacity-50"
                     >
                       {teacher.isLiked
-                        ? <BsHeartFill className="w-4 h-4 text-red-500" />
-                        : <BsHeart className="w-4 h-4 text-gray-400" />}
+                        ? <BsHeartFill className="h-3.5 w-3.5 text-rose-500" />
+                        : <BsHeart className="h-3.5 w-3.5 text-rose-500" />}
+                      <span>{teacher.totalLikes} Likes</span>
                     </button>
-                    <span
-                      className="min-w-5 text-center text-[11px] font-medium text-gray-500"
-                      aria-label={`${teacher.totalLikes} likes`}
-                      title={`${teacher.totalLikes} likes`}
-                    >
-                      {teacher.totalLikes}
-                    </span>
                     <button
                       type="button"
                       aria-label="Share tutor profile"
