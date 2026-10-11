@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Content-rich guest homepage (Naukri-style) — same navy/red palette:
- *  Navy:    #15213D   Red: #C0392B   Peach: #FBE7E0   Lavender: #EEF1FB
+ * Public homepage using TutorNear's navy and orange brand palette.
  */
 
 import React, { useEffect, useState, useSyncExternalStore } from "react";
@@ -32,7 +31,6 @@ import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from 
 import { getToken } from "@/utils/auth";
 
 const NAVY = "#15213D";
-const RED = "#C0392B";
 const ORANGE = "#E8621A";
 
 function subscribeToAuthChanges(onChange: () => void) {
@@ -94,7 +92,7 @@ function TutorCard({ t, index }: { t: DisplayTeacher; index: number }) {
       style={{ animationDelay: `${Math.min(index, 7) * 70}ms` }}
     >
       <div
-        className="relative h-24 shrink-0 bg-gradient-to-br from-[#FBE7E0] to-[#F6D6CB]"
+        className="relative h-24 shrink-0 bg-gradient-to-br from-[#FFF3EC] to-[#FFE3D1]"
       >
         {bannerUrl && brokenBannerUrl !== bannerUrl && (
           <img
@@ -322,7 +320,7 @@ export default function HomeGuestPage() {
         <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight animate-fade-in-up" style={{ color: NAVY }}>
           Unlock Your Potential with the
         </h1>
-        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-8 animate-fade-in-up" style={{ color: RED, animationDelay: "100ms" }}>
+        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-8 animate-fade-in-up" style={{ color: ORANGE, animationDelay: "100ms" }}>
           Perfect Tutor
         </h1>
 
@@ -351,7 +349,7 @@ export default function HomeGuestPage() {
             <span
               key={s}
               className="text-xs font-medium px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 cursor-pointer
-                hover:border-[#C0392B] hover:text-[#C0392B] hover:-translate-y-0.5 transition-all animate-fade-in-up"
+                hover:border-[#E8621A] hover:text-[#E8621A] hover:-translate-y-0.5 transition-all animate-fade-in-up"
               style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
             >
               {s}
@@ -395,7 +393,7 @@ export default function HomeGuestPage() {
               <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Top Rated Tutors</h2>
               <p className="text-sm text-gray-500 mt-1">Learn from the best verified teachers in the field</p>
             </div>
-            <Link href="/student" className="text-sm font-semibold hover:underline animate-fade-in-up" style={{ color: RED, animationDelay: "100ms" }}>
+            <Link href="/student" className="text-sm font-semibold hover:underline animate-fade-in-up" style={{ color: ORANGE, animationDelay: "100ms" }}>
               View all tutors →
             </Link>
           </div>
@@ -439,7 +437,7 @@ export default function HomeGuestPage() {
               <span className="flex items-center gap-1.5 text-sm text-white"><FaUserCheck className="w-3.5 h-3.5" style={{ color: "#F2B705" }} />Free to join</span>
             </div>
           </div>
-          <button className="px-6 py-3 rounded-lg text-sm font-semibold shrink-0 transition-all hover:-translate-y-0.5 hover:shadow-lg" style={{ background: RED, color: "white" }}>
+          <button className="px-6 py-3 rounded-lg text-sm font-semibold shrink-0 transition-all hover:-translate-y-0.5 hover:shadow-lg" style={{ background: ORANGE, color: "white" }}>
             Apply to Teach
           </button>
         </div>
@@ -463,7 +461,7 @@ export default function HomeGuestPage() {
               </div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5">&ldquo;{t.quote}&rdquo;</p>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "#FBE7E0", color: RED }}>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "#FFF3EC", color: ORANGE }}>
                   {t.initials}
                 </div>
                 <div>
@@ -484,7 +482,7 @@ export default function HomeGuestPage() {
           <div className="hidden sm:block absolute top-7 left-[16%] right-[16%] h-px border-t border-dashed border-gray-300" />
           {STEPS.map((s, index) => (
             <div key={s.title} className="relative z-10 flex flex-col items-center animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
-              <div className="w-14 h-14 rounded-full bg-white border-2 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110" style={{ borderColor: RED, color: RED }}>
+              <div className="w-14 h-14 rounded-full bg-white border-2 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110" style={{ borderColor: ORANGE, color: ORANGE }}>
                 {s.icon}
               </div>
               <h3 className="text-base font-bold mb-1.5" style={{ color: NAVY }}>{s.title}</h3>
@@ -507,13 +505,13 @@ export default function HomeGuestPage() {
 
       {/* ── Final CTA ── */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="rounded-3xl px-8 sm:px-12 py-10 flex flex-col sm:flex-row items-center justify-between gap-6" style={{ background: RED }}>
+        <div className="rounded-3xl px-8 sm:px-12 py-10 flex flex-col sm:flex-row items-center justify-between gap-6" style={{ background: NAVY }}>
           <div className="text-center sm:text-left">
             <h3 className="text-2xl font-bold text-white">Ready to reach your goals?</h3>
             <p className="text-white/85 text-sm mt-2 max-w-md">Join 50,000+ students already learning with TutorNear. Start your free trial session today.</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <button className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-white" style={{ color: RED }}>Find a Tutor</button>
+            <button className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors hover:bg-orange-600" style={{ background: ORANGE }}>Find a Tutor</button>
             <button className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white border border-white/50 hover:bg-white/10 transition-colors">How it Works</button>
           </div>
         </div>
