@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Updated: focus ring and filled-digit colors match the brand red (#C0392B) instead of blue.
+ * OTP focus and filled-digit colors follow the TutorNear orange brand accent.
  */
 
 import React, { useRef, KeyboardEvent, ClipboardEvent } from "react";
@@ -73,8 +73,8 @@ export default function OTPInput({ value, onChange, error, length = 6 }: OTPInpu
             aria-label={`OTP digit ${i + 1}`}
             className={`w-11 h-12 sm:w-12 sm:h-13 text-center text-lg font-bold rounded-xl border-2 outline-none
               transition-all duration-150 bg-white text-gray-900
-              focus:border-[#C0392B] focus:ring-2 focus:ring-[#C0392B]/20 focus:scale-105
-              ${error ? "border-red-400 bg-red-50" : digits[i] ? "border-[#C0392B] bg-[#FBE7E0]" : "border-gray-200"}
+              focus:border-[#E8621A] focus:ring-2 focus:ring-[#E8621A]/20 focus:scale-105
+              ${error ? "border-red-400 bg-red-50" : digits[i] ? "border-[#E8621A] bg-[#FFF3EC]" : "border-gray-200"}
             `}
           />
         ))}

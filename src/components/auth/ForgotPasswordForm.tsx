@@ -1,10 +1,8 @@
 "use client";
 
 /**
- * Updated to match the homepage palette:
- *   Navy: #15213D   Red: #C0392B   Peach: #FBE7E0
- * Step-progress "done" and final success states keep semantic green —
- * that signals completion, not brand, same logic used elsewhere in the app.
+ * Uses the shared navy and orange TutorNear palette. Progress completion
+ * and success states remain green to distinguish them from brand styling.
  */
 
 import React, { useState, useEffect } from "react";
@@ -23,7 +21,7 @@ import {
 } from "@/lib/validations";
 
 const NAVY = "#15213D";
-const RED = "#C0392B";
+const ORANGE = "#E8621A";
 
 type Step = "email" | "otp" | "reset" | "success";
 const OTP_RESEND_SECONDS = 60;
@@ -130,7 +128,7 @@ export default function ForgotPasswordForm() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
                       ${done ? "bg-green-500 text-white" : active ? "text-white" : "bg-gray-100 text-gray-400"}`}
-                    style={active ? { background: RED, boxShadow: `0 0 0 4px ${RED}1A` } : undefined}
+                    style={active ? { background: ORANGE, boxShadow: `0 0 0 4px ${ORANGE}1A` } : undefined}
                   >
                     {done ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,7 +138,7 @@ export default function ForgotPasswordForm() {
                   </div>
                   <span
                     className={`text-xs font-medium whitespace-nowrap ${done ? "text-green-600" : "text-gray-400"}`}
-                    style={active ? { color: RED } : undefined}
+                    style={active ? { color: ORANGE } : undefined}
                   >
                     {label}
                   </span>
@@ -170,7 +168,7 @@ export default function ForgotPasswordForm() {
                 autoComplete="email"
                 {...regEmail("email")}
                 className={`w-full pl-10 pr-4 py-2.5 text-sm text-gray-900 border rounded-lg outline-none transition-all duration-150
-                  placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
+                  placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-[#E8621A]/20 focus:border-[#E8621A]
                   ${emailErrors.email ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
               />
             </div>
@@ -190,7 +188,7 @@ export default function ForgotPasswordForm() {
             className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
               flex items-center justify-center gap-2 hover:opacity-90"
-            style={{ background: RED }}
+            style={{ background: ORANGE }}
           >
             {isLoading ? (
               <>
@@ -213,7 +211,7 @@ export default function ForgotPasswordForm() {
 
           <p className="text-center text-sm text-gray-500">
             Remembered it?{" "}
-            <Link href="/login" className="font-semibold hover:underline" style={{ color: RED }}>Back to login</Link>
+            <Link href="/login" className="font-semibold hover:underline" style={{ color: ORANGE }}>Back to login</Link>
           </p>
         </form>
       )}
@@ -221,9 +219,9 @@ export default function ForgotPasswordForm() {
       {/* ── Step 2: OTP ── */}
       {step === "otp" && (
         <div className="flex flex-col gap-5">
-          <div className="rounded-xl p-4 text-center" style={{ background: "#FBE7E0" }}>
+          <div className="rounded-xl p-4 text-center" style={{ background: "#FFF3EC" }}>
             <p className="text-sm text-gray-600">OTP sent to</p>
-            <p className="text-sm font-bold mt-0.5" style={{ color: RED }}>{sentEmail}</p>
+            <p className="text-sm font-bold mt-0.5" style={{ color: ORANGE }}>{sentEmail}</p>
           </div>
 
           <div className="flex flex-col items-center gap-4">
@@ -233,9 +231,9 @@ export default function ForgotPasswordForm() {
 
           <div className="flex items-center justify-center text-sm">
             {timer > 0 ? (
-              <p className="text-gray-500">Resend in <span className="font-semibold tabular-nums" style={{ color: RED }}>{timer}s</span></p>
+              <p className="text-gray-500">Resend in <span className="font-semibold tabular-nums" style={{ color: ORANGE }}>{timer}s</span></p>
             ) : (
-              <button type="button" onClick={resendOTP} disabled={isLoading} className="font-semibold hover:underline disabled:opacity-50" style={{ color: RED }}>
+              <button type="button" onClick={resendOTP} disabled={isLoading} className="font-semibold hover:underline disabled:opacity-50" style={{ color: ORANGE }}>
                 {isLoading ? "Sending…" : "Resend OTP"}
               </button>
             )}
@@ -248,7 +246,7 @@ export default function ForgotPasswordForm() {
             className="w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
               flex items-center justify-center gap-2 hover:opacity-90"
-            style={{ background: RED }}
+            style={{ background: ORANGE }}
           >
             {isLoading ? (
               <>
@@ -289,7 +287,7 @@ export default function ForgotPasswordForm() {
             className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
               flex items-center justify-center gap-2 hover:opacity-90"
-            style={{ background: RED }}
+            style={{ background: ORANGE }}
           >
             {isLoading ? (
               <>
@@ -328,7 +326,7 @@ export default function ForgotPasswordForm() {
             href="/login"
             className="w-full py-3 text-white text-sm font-semibold rounded-xl
               transition-all duration-200 text-center block hover:opacity-90"
-            style={{ background: RED }}
+            style={{ background: ORANGE }}
           >
             Back to Login
           </Link>

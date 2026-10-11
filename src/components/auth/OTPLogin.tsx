@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Updated to match the homepage palette:
- *   Navy: #15213D   Red: #C0392B   Peach: #FBE7E0
+ * Uses the shared navy and orange TutorNear palette.
  */
 
 import { useState, useEffect } from "react";
@@ -17,7 +16,7 @@ import { otpRequestSchema, OtpRequestData } from "@/lib/validations";
 import axios from "axios";
 
 const NAVY = "#15213D";
-const RED = "#C0392B";
+const ORANGE = "#E8621A";
 const OTP_RESEND_SECONDS = 60;
 
 export default function OTPLogin() {
@@ -142,19 +141,19 @@ export default function OTPLogin() {
       <div className="flex flex-col gap-5">
         <div
           className="rounded-xl p-4 flex items-start gap-3"
-          style={{ background: "#FBE7E0" }}
+          style={{ background: "#FFF3EC" }}
         >
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-            style={{ background: "#F6D6CB" }}
+            style={{ background: "#FFE3D1" }}
           >
-            <AiOutlineMail className="w-4 h-4" style={{ color: RED }} />
+            <AiOutlineMail className="w-4 h-4" style={{ color: ORANGE }} />
           </div>
           <div>
             <p className="text-sm font-medium" style={{ color: NAVY }}>
               OTP sent to
             </p>
-            <p className="text-sm font-semibold" style={{ color: RED }}>
+            <p className="text-sm font-semibold" style={{ color: ORANGE }}>
               {sentEmail}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -184,7 +183,7 @@ export default function OTPLogin() {
               Resend in{" "}
               <span
                 className="font-semibold tabular-nums"
-                style={{ color: RED }}
+                style={{ color: ORANGE }}
               >
                 {timer}s
               </span>
@@ -195,7 +194,7 @@ export default function OTPLogin() {
               onClick={resendOTP}
               disabled={isSending}
               className="font-semibold hover:underline disabled:opacity-50"
-              style={{ color: RED }}
+              style={{ color: ORANGE }}
             >
               {isSending ? "Sending…" : "Resend OTP"}
             </button>
@@ -209,7 +208,7 @@ export default function OTPLogin() {
           className="w-full py-3 text-white text-sm font-semibold rounded-xl
             transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
             flex items-center justify-center gap-2 hover:opacity-90"
-          style={{ background: RED }}
+          style={{ background: ORANGE }}
         >
           {isVerifying ? (
             <>
@@ -298,7 +297,7 @@ export default function OTPLogin() {
             {...register("email")}
             className={`w-full pl-10 pr-4 py-2.5 text-sm text-gray-900 border rounded-lg outline-none transition-all duration-150
               placeholder:text-gray-400 bg-white
-              focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]
+              focus:ring-2 focus:ring-[#E8621A]/20 focus:border-[#E8621A]
               ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
           />
         </div>
@@ -326,7 +325,7 @@ export default function OTPLogin() {
         className="mt-1 w-full py-3 text-white text-sm font-semibold rounded-xl
           transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
           flex items-center justify-center gap-2 hover:opacity-90"
-        style={{ background: RED }}
+        style={{ background: ORANGE }}
       >
         {isSending ? (
           <>

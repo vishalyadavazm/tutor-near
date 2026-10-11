@@ -45,7 +45,7 @@ function TypeCard({
       className={clsx(
         "flex-1 rounded-xl border-2 p-4 text-left transition-all duration-150 flex items-center justify-between gap-3",
         selected
-          ? "border-brand-red bg-brand-peach"
+          ? "border-brand-orange bg-[#FFF3EC]"
           : hasError
             ? "border-red-400 bg-white"
             : "border-gray-200 bg-white",
@@ -55,7 +55,7 @@ function TypeCard({
         <p
           className={clsx(
             "text-sm font-bold",
-            selected ? "text-brand-red" : "text-brand-navy",
+            selected ? "text-brand-orange" : "text-brand-navy",
           )}
         >
           {title}
@@ -67,7 +67,7 @@ function TypeCard({
       <div
         className={clsx(
           "w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg",
-          selected ? "bg-brand-peach text-brand-red" : "bg-gray-100 text-gray-400",
+          selected ? "bg-[#FFF3EC] text-brand-orange" : "bg-gray-100 text-gray-400",
         )}
       >
         {icon}
@@ -148,9 +148,9 @@ function OTPScreen({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-brand-peach">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[#FFF3EC]">
         <svg
-          className="w-8 h-8 text-brand-red"
+          className="w-8 h-8 text-brand-orange"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -187,7 +187,7 @@ function OTPScreen({
         {canResend ? (
           <button
             onClick={handleResend}
-            className="font-semibold text-brand-red hover:underline"
+            className="font-semibold text-brand-orange hover:underline"
           >
             Resend OTP
           </button>
@@ -368,7 +368,7 @@ export default function RegisterForm() {
               {...register("phone")}
               className={clsx(
                 "flex-1 pr-4 py-2.5 text-sm text-gray-900 border rounded-r-lg outline-none transition-all duration-150",
-                "placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red",
+                "placeholder:text-gray-400 bg-white focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange",
                 errors.phone
                   ? "border-red-400 bg-red-50"
                   : "border-gray-200 hover:border-gray-300",
@@ -400,7 +400,7 @@ export default function RegisterForm() {
         {/* Account type — now appears after Confirm Password */}
         <div id="account-type-section" className="flex flex-col gap-1.5 mt-1">
           <label className="text-sm font-medium text-gray-700">
-            I am registering as <span className="text-brand-red">*</span>
+            I am registering as <span className="text-brand-orange">*</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <TypeCard
@@ -449,7 +449,7 @@ export default function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-gray-500">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-brand-red hover:underline">
+        <Link href="/login" className="font-semibold text-brand-orange hover:underline">
           Sign in
         </Link>
       </p>

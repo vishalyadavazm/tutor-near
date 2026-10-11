@@ -63,7 +63,7 @@ export default function LoginForm() {
             onClick={() => setTab(t)}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
               tab === t
-                ? "bg-white shadow-sm text-brand-red"
+                ? "bg-white shadow-sm text-brand-orange"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -105,13 +105,13 @@ export default function LoginForm() {
               <input
                 type="checkbox"
                 {...register("rememberMe")}
-                className="w-4 h-4 rounded border-gray-300 accent-brand-red"
+                className="w-4 h-4 rounded border-gray-300 accent-brand-orange"
               />
               <span className="text-sm text-gray-600">Remember me</span>
             </label>
             <Link
               href="/forgot-password"
-              className="text-sm font-medium text-brand-red hover:underline transition-colors"
+              className="text-sm font-medium text-brand-orange hover:underline transition-colors"
             >
               Forgot password?
             </Link>
@@ -169,7 +169,7 @@ export default function LoginForm() {
       {/* Footer */}
       <p className="mt-7 text-center text-sm text-gray-500">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="font-semibold text-brand-red hover:underline">
+        <Link href="/register" className="font-semibold text-brand-orange hover:underline">
           Create account
         </Link>
       </p>

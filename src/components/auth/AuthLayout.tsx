@@ -20,10 +20,11 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <div className="absolute bottom-[-60px] left-[-60px] w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-white/[0.03] pointer-events-none" />
 
-        {/* Logo — same plain text mark as the homepage navbar */}
+        {/* Logo */}
         <div className="relative z-10">
-          <Link href="/" className="text-xl font-bold tracking-tight text-white w-fit">
-            TutorNear
+          <Link href="/" className="text-xl font-bold tracking-tight w-fit">
+            <span className="text-white">Tutor</span>
+            <span className="text-brand-orange">Near</span>
           </Link>
         </div>
 
@@ -80,7 +81,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div>
             <h1 className="text-white text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
               Find the Best Teachers<br />
-              <span className="text-brand-red">Near You</span>
+              <span className="text-brand-orange">Near You</span>
             </h1>
             <p className="mt-3 text-base leading-relaxed max-w-xs text-brand-muted">
               Connect with trusted, verified tutors for every subject — from JEE prep to creative arts.
@@ -112,8 +113,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       <div className="flex-1 flex flex-col">
         {/* Mobile top bar — matches home page navbar exactly */}
         <div className="lg:hidden flex items-center justify-between px-5 h-16 border-b border-gray-100">
-          <Link href="/" className="text-lg font-bold text-brand-navy">
-            TutorNear
+          <Link href="/" className="text-lg font-bold">
+            <span className="text-brand-navy">Tutor</span>
+            <span className="text-brand-orange">Near</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
@@ -121,7 +123,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             </Link>
             <Link
               href="/register"
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red transition-opacity hover:opacity-90"
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-orange transition-opacity hover:opacity-90"
             >
               Register
             </Link>

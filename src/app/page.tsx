@@ -14,7 +14,7 @@ import {
   AiOutlineCalendar,
   AiOutlineBook,
 } from "react-icons/ai";
-import { BsStarFill, BsHeartFill, BsChevronDown, BsChevronUp } from "react-icons/bs";
+import { BsStarFill, BsHeartFill, BsShieldCheck, BsChevronDown, BsChevronUp } from "react-icons/bs";
 import {
   FaFacebookF,
   FaTwitter,
@@ -84,16 +84,28 @@ const FOOTER_COLUMNS = [
 /* ─── Sub-components ─────────────────────────────── */
 function TutorCard({ t, index }: { t: DisplayTeacher; index: number }) {
   const [brokenPhotoUrl, setBrokenPhotoUrl] = useState<string | null>(null);
+  const [brokenBannerUrl, setBrokenBannerUrl] = useState<string | null>(null);
+  const photoUrl = t.photoUrl?.replace(/^http:\/\//i, "https://") ?? null;
+  const bannerUrl = t.bannerUrl?.replace(/^http:\/\//i, "https://") ?? null;
 
   return (
     <div
-      className="h-full flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up"
+      className="group h-full flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-200/80 shadow-[0_3px_12px_rgba(21,33,61,0.04)] transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up"
       style={{ animationDelay: `${Math.min(index, 7) * 70}ms` }}
     >
       <div
-        className="relative h-32 flex items-center justify-center"
-        style={{ background: "linear-gradient(135deg, #FBE7E0, #F6D6CB)" }}
+        className="relative h-24 shrink-0 bg-gradient-to-br from-[#FBE7E0] to-[#F6D6CB]"
       >
+        {bannerUrl && brokenBannerUrl !== bannerUrl && (
+          <img
+            src={bannerUrl}
+            alt=""
+            aria-hidden="true"
+            onError={() => setBrokenBannerUrl(bannerUrl)}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#15213D]/10 to-transparent" />
         <span
           className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold"
           style={{ color: NAVY }}
@@ -106,22 +118,28 @@ function TutorCard({ t, index }: { t: DisplayTeacher; index: number }) {
           <BsStarFill className="w-3 h-3" style={{ color: "#F2B705" }} />
           {t.rating === null ? "New tutor" : t.rating.toFixed(1)}
         </span>
-        <div className="relative w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center text-sm font-bold border-2 border-white" style={{ color: NAVY }}>
+        <div
+          className="absolute -bottom-7 left-5 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white text-sm font-bold text-[#15213D] shadow-md"
+          style={{ backgroundColor: t.bg, color: t.color }}
+        >
           {t.initials}
-          {t.photoUrl && brokenPhotoUrl !== t.photoUrl && (
+          {photoUrl && brokenPhotoUrl !== photoUrl && (
             <img
-              src={t.photoUrl}
+              src={photoUrl}
               alt={t.name}
-              onError={() => setBrokenPhotoUrl(t.photoUrl)}
+              onError={() => setBrokenPhotoUrl(photoUrl)}
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="text-sm font-bold truncate" style={{ color: NAVY }}>{t.name}</h3>
-        <p className="min-h-8 text-[11px] font-semibold uppercase tracking-wide mt-1 line-clamp-2" style={{ color: RED }}>
+      <div className="flex flex-1 flex-col px-5 pb-4 pt-9">
+        <h3 className="flex items-center gap-1.5 truncate text-sm font-bold" style={{ color: NAVY }}>
+          <span className="truncate">{t.name}</span>
+          {t.verified && <BsShieldCheck className="h-3.5 w-3.5 shrink-0 text-blue-500" title="Verified tutor" />}
+        </h3>
+        <p className="min-h-8 text-[11px] font-semibold uppercase tracking-wide mt-1 line-clamp-2" style={{ color: ORANGE }}>
           {t.expertise || "Tutor"}
         </p>
         <div className="mt-2.5 space-y-1.5 text-xs text-gray-600">
@@ -146,8 +164,7 @@ function TutorCard({ t, index }: { t: DisplayTeacher; index: number }) {
         <hr className="mt-3 mb-3 border-gray-100" />
         <Link
           href={`/teacher/${t.id}`}
-          className="mt-auto block w-full py-2 rounded-lg text-center text-xs font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: NAVY }}
+          className="mt-auto block w-full rounded-lg bg-[#111b33] py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-[#1d2d50]"
         >
           View Profile
         </Link>
@@ -301,7 +318,7 @@ export default function HomeGuestPage() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="px-6 pt-16 pb-8 text-center" style={{ background: "#F7F7FA" }}>
+      <section className="px-6 pt-12 pb-6 text-center" style={{ background: "#F7F7FA" }}>
         <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight animate-fade-in-up" style={{ color: NAVY }}>
           Unlock Your Potential with the
         </h1>
@@ -327,7 +344,7 @@ export default function HomeGuestPage() {
       </section>
 
       {/* ── Trending searches ── */}
-      <section className="px-6 pb-14" style={{ background: "#F7F7FA" }}>
+      <section className="px-6 pb-8" style={{ background: "#F7F7FA" }}>
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-2.5 flex-wrap">
           <span className="text-xs font-semibold text-gray-400 mr-1">Trending:</span>
           {TRENDING_SEARCHES.map((s, index) => (
@@ -344,8 +361,8 @@ export default function HomeGuestPage() {
       </section>
 
       {/* ── Featured job posts ── */}
-      <section aria-label="Featured job posts" className="bg-[#F7F7FA] px-5 py-6 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+      <section aria-label="Featured job posts" className="bg-[#F7F7FA] px-5 py-5 sm:px-6">
+        <div className="mx-auto max-w-[1400px]">
           {postsLoading ? (
             <div className="h-[220px] animate-pulse rounded-2xl bg-gray-200" />
           ) : postsError ? (
@@ -371,23 +388,20 @@ export default function HomeGuestPage() {
       </section>
 
       {/* ── Top Rated Tutors (full grid) ── */}
-      <section className="py-16 px-6" style={{ background: "#EEF1FB" }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-10 flex-wrap gap-2">
+      <section className="px-5 py-10 sm:px-6 sm:py-12" style={{ background: "#F7F8FD" }}>
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-end justify-between mb-6 flex-wrap gap-2">
             <div className="animate-fade-in-up">
               <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Top Rated Tutors</h2>
-              <p className="text-sm text-gray-500 mt-1">Learn from the best in the field</p>
+              <p className="text-sm text-gray-500 mt-1">Learn from the best verified teachers in the field</p>
             </div>
             <Link href="/student" className="text-sm font-semibold hover:underline animate-fade-in-up" style={{ color: RED, animationDelay: "100ms" }}>
               View all tutors →
             </Link>
           </div>
-          <div
-            className="grid items-stretch gap-5"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))" }}
-          >
+          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {teachersLoading ? (
-              Array.from({ length: 4 }, (_, index) => (
+              Array.from({ length: 3 }, (_, index) => (
                 <div key={index} className="h-64 rounded-2xl bg-white animate-pulse" />
               ))
             ) : teachersError ? (
