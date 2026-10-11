@@ -80,11 +80,14 @@ const FOOTER_COLUMNS = [
 ];
 
 /* ─── Sub-components ─────────────────────────────── */
-function TutorCard({ t }: { t: DisplayTeacher }) {
+function TutorCard({ t, index }: { t: DisplayTeacher; index: number }) {
   const [brokenPhotoUrl, setBrokenPhotoUrl] = useState<string | null>(null);
 
   return (
-    <div className="h-full flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+    <div
+      className="h-full flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up"
+      style={{ animationDelay: `${Math.min(index, 7) * 70}ms` }}
+    >
       <div
         className="relative h-32 flex items-center justify-center"
         style={{ background: "linear-gradient(135deg, #FBE7E0, #F6D6CB)" }}
@@ -281,14 +284,14 @@ export default function HomeGuestPage() {
 
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-8 text-center" style={{ background: "#F7F7FA" }}>
-        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight" style={{ color: NAVY }}>
+        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight animate-fade-in-up" style={{ color: NAVY }}>
           Unlock Your Potential with the
         </h1>
-        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-8" style={{ color: RED }}>
+        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-8 animate-fade-in-up" style={{ color: RED, animationDelay: "100ms" }}>
           Perfect Tutor
         </h1>
 
-        <div className="bg-white rounded-full border border-gray-200 flex items-stretch max-w-2xl mx-auto shadow-sm overflow-hidden">
+        <div className="bg-white rounded-full border border-gray-200 flex items-stretch max-w-2xl mx-auto shadow-sm overflow-hidden animate-fade-in-up" style={{ animationDelay: "180ms" }}>
           <div className="flex items-center gap-2 flex-1 px-5 py-3 border-r border-gray-100">
             <AiOutlineBook className="w-4 h-4 text-gray-400 shrink-0" />
             <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)}
@@ -309,11 +312,12 @@ export default function HomeGuestPage() {
       <section className="px-6 pb-14" style={{ background: "#F7F7FA" }}>
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-2.5 flex-wrap">
           <span className="text-xs font-semibold text-gray-400 mr-1">Trending:</span>
-          {TRENDING_SEARCHES.map((s) => (
+          {TRENDING_SEARCHES.map((s, index) => (
             <span
               key={s}
               className="text-xs font-medium px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 cursor-pointer
-                hover:border-[#C0392B] hover:text-[#C0392B] transition-colors"
+                hover:border-[#C0392B] hover:text-[#C0392B] hover:-translate-y-0.5 transition-all animate-fade-in-up"
+              style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
             >
               {s}
             </span>
@@ -337,7 +341,9 @@ export default function HomeGuestPage() {
               </button>
             </div>
           ) : posts.length > 0 ? (
-            <JobPostSlider posts={posts} />
+            <div className="animate-fade-in-up">
+              <JobPostSlider posts={posts} />
+            </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-sm text-gray-500">
               No job posts available right now.
@@ -350,11 +356,11 @@ export default function HomeGuestPage() {
       <section className="py-16 px-6" style={{ background: "#EEF1FB" }}>
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-10 flex-wrap gap-2">
-            <div>
+            <div className="animate-fade-in-up">
               <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Top Rated Tutors</h2>
               <p className="text-sm text-gray-500 mt-1">Learn from the best in the field</p>
             </div>
-            <Link href="/student" className="text-sm font-semibold hover:underline" style={{ color: RED }}>
+            <Link href="/student" className="text-sm font-semibold hover:underline animate-fade-in-up" style={{ color: RED, animationDelay: "100ms" }}>
               View all tutors →
             </Link>
           </div>
@@ -377,7 +383,7 @@ export default function HomeGuestPage() {
                 </button>
               </div>
             ) : teachers.length > 0 ? (
-              teachers.map((teacher) => <TutorCard key={teacher.id} t={teacher} />)
+              teachers.map((teacher, index) => <TutorCard key={teacher.id} t={teacher} index={index} />)
             ) : (
               <p className="col-span-full rounded-2xl bg-white p-6 text-center text-sm text-gray-500">
                 No tutor profiles are available yet.
@@ -389,7 +395,7 @@ export default function HomeGuestPage() {
 
       {/* ── Become a Tutor banner ── */}
       <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="rounded-3xl px-8 sm:px-12 py-10 flex flex-col lg:flex-row items-center justify-between gap-8" style={{ background: NAVY }}>
+        <div className="rounded-3xl px-8 sm:px-12 py-10 flex flex-col lg:flex-row items-center justify-between gap-8 transition-transform duration-300 hover:-translate-y-1" style={{ background: NAVY }}>
           <div className="text-center lg:text-left">
             <h3 className="text-2xl font-bold text-white">Share your knowledge. Earn on your schedule.</h3>
             <p className="text-sm mt-2 max-w-md mx-auto lg:mx-0" style={{ color: "#9FA9C4" }}>
@@ -401,7 +407,7 @@ export default function HomeGuestPage() {
               <span className="flex items-center gap-1.5 text-sm text-white"><FaUserCheck className="w-3.5 h-3.5" style={{ color: "#F2B705" }} />Free to join</span>
             </div>
           </div>
-          <button className="px-6 py-3 rounded-lg text-sm font-semibold shrink-0 transition-opacity hover:opacity-90" style={{ background: RED, color: "white" }}>
+          <button className="px-6 py-3 rounded-lg text-sm font-semibold shrink-0 transition-all hover:-translate-y-0.5 hover:shadow-lg" style={{ background: RED, color: "white" }}>
             Apply to Teach
           </button>
         </div>
@@ -412,8 +418,12 @@ export default function HomeGuestPage() {
         <h2 className="text-2xl font-bold text-center" style={{ color: NAVY }}>What Our Community Says</h2>
         <p className="text-sm text-gray-500 text-center mt-2 mb-10">Real stories from students, parents, and tutors.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="bg-white border border-gray-100 rounded-2xl p-6">
+          {TESTIMONIALS.map((t, index) => (
+            <div
+              key={t.name}
+              className="bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-md animate-fade-in-up"
+              style={{ animationDelay: `${index * 90}ms` }}
+            >
               <div className="flex items-center gap-1 mb-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <BsStarFill key={i} className="w-3.5 h-3.5" style={{ color: i < Math.round(t.rating) ? "#F2B705" : "#E5E7EB" }} />
@@ -440,9 +450,9 @@ export default function HomeGuestPage() {
         <p className="text-sm text-gray-500 mt-2 mb-14">Three simple steps to connect with your perfect academic match.</p>
         <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-10">
           <div className="hidden sm:block absolute top-7 left-[16%] right-[16%] h-px border-t border-dashed border-gray-300" />
-          {STEPS.map((s) => (
-            <div key={s.title} className="relative z-10 flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-white border-2 flex items-center justify-center mb-4" style={{ borderColor: RED, color: RED }}>
+          {STEPS.map((s, index) => (
+            <div key={s.title} className="relative z-10 flex flex-col items-center animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+              <div className="w-14 h-14 rounded-full bg-white border-2 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110" style={{ borderColor: RED, color: RED }}>
                 {s.icon}
               </div>
               <h3 className="text-base font-bold mb-1.5" style={{ color: NAVY }}>{s.title}</h3>
