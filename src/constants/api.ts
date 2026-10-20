@@ -19,4 +19,5 @@ export const API = {
   COMMON_QUALIFICATION: "/common/qualification",
   COMMON_DOCUMENT_NAME: "/common/documentname",
   COMMON_COURSES: "/common/courses",
+  ENQUIRY: "/enquiry/enquirys",
 };

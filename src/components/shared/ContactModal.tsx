@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { AiOutlineClose, AiOutlinePhone, AiOutlineUser, AiOutlineMail } from "react-icons/ai";
 import { BsShieldCheck, BsCheckCircleFill } from "react-icons/bs";
+import enquiryService from "@/services/enquiry.service";
+import mentorService from "@/services/mentor.service";
+import studentService from "@/services/student.service";
+import { getRole } from "@/utils/auth";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -24,8 +28,6 @@ const GRADES = [
   "Other",
 ];
 
-type InquiryType = "inquiry" | "demo" | "message";
-
 interface Teacher {
   id: number;
   initials: string;
@@ -39,18 +41,10 @@ interface Teacher {
 
 interface Props {
   teacher: Teacher;
-  defaultType?: InquiryType;
   onClose: () => void;
 }
 
-const TAB_CONFIG: { key: InquiryType; label: string; emoji: string; cta: string }[] = [
-  { key: "inquiry", label: "Send Inquiry", emoji: "📩", cta: "Send Inquiry" },
-  { key: "demo",    label: "Book Demo",    emoji: "📅", cta: "Book Free Demo" },
-  { key: "message", label: "Message",      emoji: "💬", cta: "Send Message" },
-];
-
-export default function ContactModal({ teacher, defaultType = "inquiry", onClose }: Props) {
-  const [tab, setTab] = useState<InquiryType>(defaultType);
+export default function ContactModal({ teacher, onClose }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -78,12 +72,58 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
     return () => { document.body.style.overflow = ""; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const role = getRole();
+    if (!role) return;
+
+    async function loadContactDetails() {
+      try {
+        const details = role === "teacher"
+          ? await mentorService.getMyProfile().then(({ profile, basicUser }) => {
+              const user = profile?.user ?? basicUser;
+              return user ? {
+                name: [user.first_name, user.last_name].filter(Boolean).join(" "),
+                phone: user.phone,
+                email: user.email,
+              } : null;
+            })
+          : await studentService.getMyProfile().then(({ profile, basicUser }) => {
+              const user = profile?.user ?? basicUser;
+              return user ? {
+                name: [user.first_name, user.last_name].filter(Boolean).join(" ") || ("name" in user ? user.name : ""),
+                phone: user.phone,
+                email: user.email,
+              } : null;
+            });
+
+        if (cancelled || !details) return;
+        setName((current) => current || details.name);
+        setPhone((current) => current || details.phone || "");
+        setEmail((current) => current || details.email || "");
+      } catch {
+        if (!cancelled) {
+          setErrors((current) => ({
+            ...current,
+            profile: "Could not load your saved contact details. Please enter them manually.",
+          }));
+        }
+      }
+    }
+
+    void loadContactDetails();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function validate() {
     const errs: Record<string, string> = {};
     if (!name.trim())  errs.name  = "Name is required";
     if (!phone.trim()) errs.phone = "Phone is required";
     else if (!/^\d{10}$/.test(phone.replace(/\s/g, ""))) errs.phone = "Enter a valid 10-digit number";
-    if (tab !== "message" && !grade) errs.grade = "Please select a grade";
+    if (!grade) errs.grade = "Please select a grade";
+    if (!message.trim()) errs.message = "Message is required";
     return errs;
   }
 
@@ -93,12 +133,32 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    setSubmitted(true);
-  }
+    const enquiryMessage = [
+      `Teacher: ${teacher.name}`,
+      "Request type: inquiry",
+      `Subject: ${subject}`,
+      grade ? `Grade / Class: ${grade}` : null,
+      `Preferred mode: ${modeP}`,
+      "",
+      message.trim(),
+    ].filter((line): line is string => line !== null).join("\n");
 
-  const activeCfg = TAB_CONFIG.find((c) => c.key === tab)!;
+    try {
+      await enquiryService.create({
+        name: name.trim(),
+        phone: phone.replace(/\s/g, ""),
+        enquirer_type: "student",
+        message: enquiryMessage,
+      });
+      setSubmitted(true);
+    } catch (error) {
+      setErrors({
+        submit: error instanceof Error ? error.message : "Unable to send your enquiry.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     /* Overlay */
@@ -145,23 +205,6 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-4 bg-white/10 rounded-xl p-1">
-            {TAB_CONFIG.map((cfg) => (
-              <button
-                key={cfg.key}
-                onClick={() => setTab(cfg.key)}
-                className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                  tab === cfg.key
-                    ? "bg-white text-gray-900 shadow scale-[1.03]"
-                    : "text-white/70 hover:text-white hover:scale-[1.02]"
-                }`}
-              >
-                <span>{cfg.emoji}</span>
-                <span className="hidden sm:inline">{cfg.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Success state */}
@@ -171,10 +214,10 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
               <BsCheckCircleFill className="w-8 h-8 text-green-500" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2 animate-fade-in-up">
-              {tab === "demo" ? "Demo Booked!" : tab === "message" ? "Message Sent!" : "Inquiry Sent!"}
+              Inquiry Sent!
             </h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
-              {teacher.name} will get back to you shortly. You can expect a response within 2–4 hours.
+              {teacher.name} will get back to you when available.
             </p>
             <button
               onClick={onClose}
@@ -248,18 +291,16 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
                   </select>
                 </Field>
 
-                {tab !== "message" && (
-                  <Field label="Grade / Class" required error={errors.grade}>
-                    <select
-                      value={grade}
-                      onChange={(e) => setGrade(e.target.value)}
-                      className={selectCls(!!errors.grade)}
-                    >
-                      <option value="">Select grade</option>
-                      {GRADES.map((g) => <option key={g}>{g}</option>)}
-                    </select>
-                  </Field>
-                )}
+                <Field label="Grade / Class" required error={errors.grade}>
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className={selectCls(!!errors.grade)}
+                  >
+                    <option value="">Select grade</option>
+                    {GRADES.map((g) => <option key={g}>{g}</option>)}
+                  </select>
+                </Field>
               </div>
 
               {/* Mode preference */}
@@ -286,23 +327,29 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
               </div>
 
               {/* Message */}
-              <Field label={tab === "message" ? "Message" : "Additional Message (optional)"}>
+              <Field label="Message" required error={errors.message}>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={
-                    tab === "demo"
-                      ? "Mention preferred timings, days, or any specific topic you'd like covered…"
-                      : tab === "message"
-                      ? "Write your message here…"
-                      : "Tell the teacher about your child's current level, goals, or any challenges…"
-                  }
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    if (errors.message) setErrors((current) => ({ ...current, message: "" }));
+                  }}
+                  placeholder="Tell the teacher about your current level, goals, or any challenges…"
                   rows={3}
-                  className="w-full px-3 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-xl outline-none resize-none placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                  className={`w-full px-3 py-2.5 text-sm text-gray-900 border rounded-xl outline-none resize-none placeholder:text-gray-400 transition-all ${
+                    errors.message
+                      ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                      : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  }`}
                 />
               </Field>
 
               {/* Privacy note */}
+              {errors.profile && (
+                <p role="status" className="text-xs text-amber-700">
+                  {errors.profile}
+                </p>
+              )}
               <p className="text-[11px] text-gray-400 -mt-1">
                 Your contact details are shared only with {teacher.name}. TutorNear will not share them with third parties.
               </p>
@@ -310,6 +357,11 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
 
             {/* Submit footer */}
             <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4">
+              {errors.submit && (
+                <p role="alert" className="text-sm text-red-600 mb-3">
+                  {errors.submit}
+                </p>
+              )}
               <button
                 type="submit"
                 disabled={loading}
@@ -325,7 +377,7 @@ export default function ContactModal({ teacher, defaultType = "inquiry", onClose
                     Sending…
                   </>
                 ) : (
-                  `${activeCfg.emoji} ${activeCfg.cta}`
+                  "📩 Send Inquiry"
                 )}
               </button>
             </div>

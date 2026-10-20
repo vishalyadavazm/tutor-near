@@ -1041,7 +1041,6 @@ export default function StudentHome() {
             color: ct.color,
             tagline: [ct.expertise, ct.city].filter(Boolean).join(" · "),
           }}
-          defaultType="inquiry"
           onClose={() => setContactTeacher(null)}
         />
       )}

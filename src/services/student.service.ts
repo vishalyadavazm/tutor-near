@@ -14,6 +14,10 @@ interface StudentPostListResponse {
 export interface StudentProfileUserRef {
   id: number;
   name: string;
+  email?: string;
+  phone?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 /** Returned in place of `user` when the student hasn't created a profile yet. */
@@ -98,6 +102,11 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 }
 
 class StudentService {
+  private myProfileRequest: Promise<{
+    profile: StudentProfileRecord | null;
+    basicUser: StudentProfileBasicUser | null;
+  }> | null = null;
+
   async getPostsPage(page = 1, perPage = 10): Promise<{
     posts: StudentPost[];
     page: number;
@@ -148,15 +157,24 @@ class StudentService {
    * Before a student has created a profile, the API returns `{ id: null, user: {...basic user fields} }`
    * instead of a list — this fetches that in one call so the create form can prefill name/email.
    */
-  async getMyProfile(): Promise<{ profile: StudentProfileRecord | null; basicUser: StudentProfileBasicUser | null }> {
-    const res = await api.get<{ data: StudentProfileRecord[] | { id: null; user: StudentProfileBasicUser } }>(
-      API.STUDENT_PROFILE,
-    );
-    const data = res.data.data;
-    if (Array.isArray(data)) {
-      return { profile: data[0] ?? null, basicUser: null };
+  getMyProfile(): Promise<{ profile: StudentProfileRecord | null; basicUser: StudentProfileBasicUser | null }> {
+    if (!this.myProfileRequest) {
+      this.myProfileRequest = api
+        .get<{ data: StudentProfileRecord[] | { id: null; user: StudentProfileBasicUser } }>(
+          API.STUDENT_PROFILE,
+        )
+        .then((res) => {
+          const data = res.data.data;
+          if (Array.isArray(data)) {
+            return { profile: data[0] ?? null, basicUser: null };
+          }
+          return { profile: null, basicUser: data?.user ?? null };
+        })
+        .finally(() => {
+          this.myProfileRequest = null;
+        });
     }
-    return { profile: null, basicUser: data?.user ?? null };
+    return this.myProfileRequest;
   }
 
   private buildProfileFormData(payload: StudentProfilePayload): FormData {

@@ -170,6 +170,11 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 }
 
 class MentorService {
+  private myProfileRequest: Promise<{
+    profile: MentorProfileRecord | null;
+    basicUser: MentorProfileBasicUser | null;
+  }> | null = null;
+
   async getQualifications(): Promise<QualificationOption[]> {
     const res = await api.get<ListResponse<QualificationOption>>(API.COMMON_QUALIFICATION);
     return res.data.data;
@@ -196,15 +201,24 @@ class MentorService {
    * Before a mentor has created a profile, the API returns `{ id: null, user: {...basic user fields} }`
    * instead of a list — this fetches that in one call so the create form can prefill name/email.
    */
-  async getMyProfile(): Promise<{ profile: MentorProfileRecord | null; basicUser: MentorProfileBasicUser | null }> {
-    const res = await api.get<{ data: MentorProfileRecord[] | { id: null; user: MentorProfileBasicUser } }>(
-      API.MENTOR_PROFILE,
-    );
-    const data = res.data.data;
-    if (Array.isArray(data)) {
-      return { profile: data[0] ?? null, basicUser: null };
+  getMyProfile(): Promise<{ profile: MentorProfileRecord | null; basicUser: MentorProfileBasicUser | null }> {
+    if (!this.myProfileRequest) {
+      this.myProfileRequest = api
+        .get<{ data: MentorProfileRecord[] | { id: null; user: MentorProfileBasicUser } }>(
+          API.MENTOR_PROFILE,
+        )
+        .then((res) => {
+          const data = res.data.data;
+          if (Array.isArray(data)) {
+            return { profile: data[0] ?? null, basicUser: null };
+          }
+          return { profile: null, basicUser: data?.user ?? null };
+        })
+        .finally(() => {
+          this.myProfileRequest = null;
+        });
     }
-    return { profile: null, basicUser: data?.user ?? null };
+    return this.myProfileRequest;
   }
 
   async getAllProfiles(options?: { page?: number; perPage?: number }): Promise<MentorDirectoryEntry[]> {

@@ -125,11 +125,9 @@ function RateWidget({
 function AboutContactCard({
   about,
   onInquiry,
-  onDemo,
 }: {
   about: string;
   onInquiry: () => void;
-  onDemo: () => void;
 }) {
   return (
     <section className="rounded-xl border border-[#E6EBF2] bg-white p-4">
@@ -161,13 +159,6 @@ function AboutContactCard({
           style={{ background: ORANGE }}
         >
           Send Inquiry
-        </button>
-        <button
-          type="button"
-          onClick={onDemo}
-          className="w-full rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-        >
-          Book Demo
         </button>
       </div>
     </section>
@@ -273,7 +264,6 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const [editCommentError, setEditCommentError] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
 
-  const [contactType, setContactType] = useState<"inquiry" | "demo" | "message">("inquiry");
   const [showContact, setShowContact] = useState(false);
 
   const [liking, setLiking] = useState(false);
@@ -354,8 +344,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     .map(toDisplayTeacherFromDirectory)
     .filter((recommended): recommended is DisplayTeacher => recommended !== null);
 
-  function openContact(type: "inquiry" | "demo" | "message") {
-    setContactType(type);
+  function openContact() {
     setShowContact(true);
   }
 
@@ -640,13 +629,6 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
                   {/* Action buttons */}
                   <div className="mt-14 flex items-center gap-1.5 sm:mt-16 sm:gap-2">
                     <button
-                      onClick={() => openContact("message")}
-                      className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-700 transition-all hover:bg-gray-50 sm:px-3 sm:text-sm"
-                    >
-                      <AiOutlineMessage className="w-4 h-4" />
-                      <span className="hidden sm:inline">Message</span>
-                    </button>
-                    <button
                       onClick={handleToggleLike}
                       disabled={liking}
                       aria-label={`${teacher.isLiked ? "Remove tutor from saved" : "Save tutor"}; ${teacher.totalLikes} likes`}
@@ -778,8 +760,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
             <div className="lg:hidden">
               <AboutContactCard
                 about={teacher.about}
-                onInquiry={() => openContact("inquiry")}
-                onDemo={() => openContact("demo")}
+                onInquiry={openContact}
               />
             </div>
 
@@ -1139,8 +1120,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
             <div className="sticky top-20 flex flex-col gap-4">
               <AboutContactCard
                 about={teacher.about}
-                onInquiry={() => openContact("inquiry")}
-                onDemo={() => openContact("demo")}
+                onInquiry={openContact}
               />
               <MoreProfilesSidebar
                 currentId={teacher.id}
@@ -1174,16 +1154,10 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
       </div>
 
       {/* Floating CTA (mobile) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-3 xl:hidden z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 flex xl:hidden z-40">
         <button
-          onClick={() => openContact("message")}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700"
-        >
-          Message
-        </button>
-        <button
-          onClick={() => openContact("inquiry")}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+          onClick={openContact}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{ background: ORANGE }}
         >
           Send Inquiry
@@ -1204,7 +1178,6 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
             color: teacher.color,
             tagline: [teacher.expertise, teacher.city].filter(Boolean).join(" · "),
           }}
-          defaultType={contactType}
           onClose={() => setShowContact(false)}
         />
       )}
