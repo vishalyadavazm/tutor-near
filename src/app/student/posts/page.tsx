@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import JobPostListItem from "@/components/student/JobPostListItem";
+import JobPostDetailsModal from "@/components/student/JobPostDetailsModal";
 import StudentJobPostCreator from "@/components/student/StudentJobPostCreator";
 import studentService, { StudentPost } from "@/services/student.service";
 
@@ -16,6 +17,7 @@ export default function StudentPostsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [selectedPost, setSelectedPost] = useState<StudentPost | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,7 +167,11 @@ export default function StudentPostsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {sortedPosts.map((post) => (
-              <JobPostListItem key={post.id} post={post} />
+              <JobPostListItem
+                key={post.id}
+                post={post}
+                onClick={() => setSelectedPost(post)}
+              />
             ))}
           </div>
         )}
@@ -199,6 +205,9 @@ export default function StudentPostsPage() {
           </p>
         )}
       </div>
+      {selectedPost && (
+        <JobPostDetailsModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+      )}
     </main>
   );
 }

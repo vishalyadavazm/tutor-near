@@ -77,8 +77,13 @@ export interface StudentPost {
   description: string | null;
   valid_uptp: string | null;
   is_active: boolean;
-  created_by: number;
-  modified_by: number | null;
+  created_by: number | StudentPostUser | null;
+  modified_by: number | StudentPostUser | null;
+}
+
+export interface StudentPostUser {
+  id: number;
+  name: string;
 }
 
 export interface StudentPostPayload {

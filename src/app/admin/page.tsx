@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   AiOutlineBook,
+  AiOutlineCheckCircle,
   AiOutlineInbox,
   AiOutlineRight,
   AiOutlineSafetyCertificate,
@@ -79,6 +80,38 @@ export default function AdminPage() {
               View the qualification options used in profiles.
             </p>
           </Link>
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-700">
+                <AiOutlineCheckCircle className="h-6 w-6" />
+              </span>
+              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                Coming soon
+              </span>
+            </div>
+            <h2 className="mt-5 text-lg font-semibold" style={{ color: NAVY }}>
+              Job Post Verification
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+              Review and verify job posts submitted by users.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                <AiOutlineSafetyCertificate className="h-6 w-6" />
+              </span>
+              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                Coming soon
+              </span>
+            </div>
+            <h2 className="mt-5 text-lg font-semibold" style={{ color: NAVY }}>
+              Teacher Verification
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+              Review teacher profiles and manage verified status.
+            </p>
+          </div>
         </div>
       </div>
     </main>
