@@ -44,10 +44,10 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 }
 
 class EnquiryService {
-  async getAll(page = 1, perPage = 10): Promise<EnquiryPage> {
+  async getAll(page = 1, perPage = 10, sort = "-created_t"): Promise<EnquiryPage> {
     try {
       const response = await api.get<unknown>(API.ENQUIRY, {
-        params: { page, per_page: perPage },
+        params: { page, per_page: perPage, sort },
       });
       const responseData = response.data;
       const result = Array.isArray(responseData)

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AiOutlineClockCircle,
   AiOutlineInbox,
@@ -29,6 +29,21 @@ export default function AdminEnquiriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+
+  const sortedEnquiries = useMemo(
+    () =>
+      [...enquiries].sort((first, second) => {
+        const firstDate = Date.parse(first.created_t ?? first.created_at ?? "");
+        const secondDate = Date.parse(second.created_t ?? second.created_at ?? "");
+        const dateDifference = secondDate - firstDate;
+        const order = Number.isFinite(dateDifference) && dateDifference !== 0
+          ? dateDifference
+          : String(second.id).localeCompare(String(first.id), undefined, { numeric: true });
+        return sortOrder === "recent" ? order : -order;
+      }),
+    [enquiries, sortOrder],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +52,8 @@ export default function AdminEnquiriesPage() {
       setLoading(true);
       setError(null);
       try {
-        const result = await enquiryService.getAll(page);
+        const sort = sortOrder === "recent" ? "-created_t" : "created_t";
+        const result = await enquiryService.getAll(page, 10, sort);
         if (cancelled) return;
         setEnquiries(result.enquiries);
         setPage(result.page);
@@ -55,7 +71,7 @@ export default function AdminEnquiriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, refreshKey]);
+  }, [page, refreshKey, sortOrder]);
 
   function changePage(nextPage: number) {
     setPage(nextPage);
@@ -92,15 +108,28 @@ export default function AdminEnquiriesPage() {
               View enquiries submitted by students and other visitors.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setRefreshKey((current) => current + 1)}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <AiOutlineReload className={loading ? "animate-spin" : ""} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              Sort by:
+              <select
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value as "recent" | "oldest")}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-300"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => setRefreshKey((current) => current + 1)}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <AiOutlineReload className={loading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -115,7 +144,7 @@ export default function AdminEnquiriesPage() {
               </div>
             </div>
             <span className="text-sm text-gray-500">
-              {loading ? "Loading…" : `${enquiries.length} on this page`}
+              {loading ? "Loading…" : `${sortedEnquiries.length} on this page`}
             </span>
           </div>
 
@@ -145,7 +174,7 @@ export default function AdminEnquiriesPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {enquiries.map((enquiry) => (
+              {sortedEnquiries.map((enquiry) => (
                 <article key={enquiry.id} className="px-5 py-5 transition-colors hover:bg-gray-50/70">
                   <div className="flex flex-col justify-between gap-4 sm:flex-row">
                     <div className="min-w-0">
