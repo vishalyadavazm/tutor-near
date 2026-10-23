@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import JobPostListItem from "@/components/student/JobPostListItem";
 import JobPostDetailsModal from "@/components/student/JobPostDetailsModal";
@@ -27,7 +27,8 @@ export default function StudentPostsPage() {
       setError(null);
       setLoadMoreError(null);
       try {
-        const result = await studentService.getPostsPage();
+        const sort = sortOrder === "recent" ? "-created_t" : "created_t";
+        const result = await studentService.getPostsPage(1, 10, sort);
         if (!cancelled) {
           setPosts(result.posts);
           setCurrentPage(result.page);
@@ -43,13 +44,14 @@ export default function StudentPostsPage() {
     return () => {
       cancelled = true;
     };
-  }, [retryCount]);
+  }, [retryCount, sortOrder]);
 
   async function loadMorePosts() {
     setLoadingMore(true);
     setLoadMoreError(null);
     try {
-      const result = await studentService.getPostsPage(currentPage + 1);
+      const sort = sortOrder === "recent" ? "-created_t" : "created_t";
+      const result = await studentService.getPostsPage(currentPage + 1, 10, sort);
       setPosts((currentPosts) => [...currentPosts, ...result.posts]);
       setCurrentPage(result.page);
       setMoreRecords(result.moreRecords);
@@ -59,18 +61,6 @@ export default function StudentPostsPage() {
       setLoadingMore(false);
     }
   }
-
-  const sortedPosts = useMemo(
-    () =>
-      [...posts].sort((a, b) => {
-        const dateDifference = Date.parse(b.created_t) - Date.parse(a.created_t);
-        const order = Number.isFinite(dateDifference) && dateDifference !== 0
-          ? dateDifference
-          : b.id - a.id;
-        return sortOrder === "recent" ? order : -order;
-      }),
-    [posts, sortOrder],
-  );
 
   return (
     <main className="min-h-screen bg-[#F7F9FC] text-[#111827]">
@@ -118,7 +108,7 @@ export default function StudentPostsPage() {
             </div>
             {!loading && !error && (
               <span className="mt-1 rounded-full bg-[#F2F5F9] px-3 py-1 text-[11px] font-medium text-gray-600">
-                {sortedPosts.length} loaded post{sortedPosts.length === 1 ? "" : "s"}
+                {posts.length} loaded post{posts.length === 1 ? "" : "s"}
               </span>
             )}
           </div>
@@ -160,13 +150,13 @@ export default function StudentPostsPage() {
               Retry
             </button>
           </div>
-        ) : sortedPosts.length === 0 ? (
+        ) : posts.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-12 text-center text-sm text-gray-500">
             No job posts yet.
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {sortedPosts.map((post) => (
+            {posts.map((post) => (
               <JobPostListItem
                 key={post.id}
                 post={post}
@@ -178,7 +168,7 @@ export default function StudentPostsPage() {
         {!loading && !error && moreRecords && (
           <div className="mt-5 flex flex-col items-center gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:justify-between">
             <p className="text-[11px] text-gray-500">
-              Showing {sortedPosts.length} request{sortedPosts.length === 1 ? "" : "s"}
+              Showing {posts.length} request{posts.length === 1 ? "" : "s"}
             </p>
             {loadMoreError && (
               <p role="alert" className="text-sm text-red-600">
@@ -199,9 +189,9 @@ export default function StudentPostsPage() {
             </button>
           </div>
         )}
-        {!loading && !error && !moreRecords && sortedPosts.length > 0 && (
+        {!loading && !error && !moreRecords && posts.length > 0 && (
           <p className="mt-5 border-t border-gray-200 pt-4 text-[11px] text-gray-500">
-            Showing {sortedPosts.length} request{sortedPosts.length === 1 ? "" : "s"}
+            Showing {posts.length} request{posts.length === 1 ? "" : "s"}
           </p>
         )}
       </div>

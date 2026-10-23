@@ -112,14 +112,14 @@ class StudentService {
     basicUser: StudentProfileBasicUser | null;
   }> | null = null;
 
-  async getPostsPage(page = 1, perPage = 10): Promise<{
+  async getPostsPage(page = 1, perPage = 10, sort = "-created_t"): Promise<{
     posts: StudentPost[];
     page: number;
     perPage: number;
     moreRecords: boolean;
   }> {
     const res = await api.get<StudentPostListResponse>(API.POST_POSTS, {
-      params: { page, per_page: perPage },
+      params: { page, per_page: perPage, sort },
     });
     return {
       posts: res.data.data,
