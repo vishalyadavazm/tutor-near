@@ -18,6 +18,8 @@ export interface EnquiryRecord {
   phone: string;
   enquirer_type: string;
   message: string;
+  mentor?: { id: number; name: string } | null;
+  assigned_to?: { id: number; name: string } | null;
   created_t?: string;
   created_at?: string;
 }
@@ -44,10 +46,15 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 }
 
 class EnquiryService {
-  async getAll(page = 1, perPage = 10, sort = "-created_t"): Promise<EnquiryPage> {
+  async getAll(
+    page = 1,
+    perPage = 10,
+    sort = "-created_t",
+    filter?: string,
+  ): Promise<EnquiryPage> {
     try {
       const response = await api.get<unknown>(API.ENQUIRY, {
-        params: { page, per_page: perPage, sort },
+        params: { page, per_page: perPage, sort, ...(filter ? { filter } : {}) },
       });
       const responseData = response.data;
       const result = Array.isArray(responseData)

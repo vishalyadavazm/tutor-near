@@ -9,6 +9,7 @@ import {
   AiOutlinePhone,
   AiOutlineReload,
   AiOutlineRight,
+  AiOutlineSearch,
   AiOutlineUser,
 } from "react-icons/ai";
 import enquiryService, { EnquiryRecord } from "@/services/enquiry.service";
@@ -30,6 +31,12 @@ export default function AdminEnquiriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [searchField, setSearchField] = useState<"name" | "mentor.name" | "assigned_to.name">("name");
+  const [searchInput, setSearchInput] = useState("");
+  const [activeSearch, setActiveSearch] = useState<{
+    field: "name" | "mentor.name" | "assigned_to.name";
+    query: string;
+  } | null>(null);
 
   const sortedEnquiries = useMemo(
     () =>
@@ -53,7 +60,10 @@ export default function AdminEnquiriesPage() {
       setError(null);
       try {
         const sort = sortOrder === "recent" ? "-created_t" : "created_t";
-        const result = await enquiryService.getAll(page, 10, sort);
+        const filter = activeSearch
+          ? `${activeSearch.field}:contains:${activeSearch.query}`
+          : undefined;
+        const result = await enquiryService.getAll(page, 10, sort, filter);
         if (cancelled) return;
         setEnquiries(result.enquiries);
         setPage(result.page);
@@ -71,10 +81,23 @@ export default function AdminEnquiriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, refreshKey, sortOrder]);
+  }, [activeSearch, page, refreshKey, sortOrder]);
 
   function changePage(nextPage: number) {
     setPage(nextPage);
+  }
+
+  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = searchInput.trim();
+    setPage(1);
+    setActiveSearch(query ? { field: searchField, query } : null);
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setActiveSearch(null);
+    setPage(1);
   }
 
   return (
@@ -133,6 +156,57 @@ export default function AdminEnquiriesPage() {
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <form
+            onSubmit={submitSearch}
+            className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row"
+          >
+            <label className="sr-only" htmlFor="enquiry-search-field">Search field</label>
+            <select
+              id="enquiry-search-field"
+              value={searchField}
+              onChange={(event) => setSearchField(
+                event.target.value as "name" | "mentor.name" | "assigned_to.name",
+              )}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-300"
+            >
+              <option value="name">Enquirer name</option>
+              <option value="mentor.name">Mentor name</option>
+              <option value="assigned_to.name">Assigned name</option>
+            </select>
+            <label className="sr-only" htmlFor="enquiry-search">Search enquiries</label>
+            <input
+              id="enquiry-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder={`Search by ${
+                searchField === "name"
+                  ? "enquirer"
+                  : searchField === "mentor.name"
+                    ? "mentor"
+                    : "assigned"
+              } name`}
+              className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none placeholder:text-gray-400 focus:border-orange-300"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ background: ORANGE }}
+            >
+              <AiOutlineSearch />
+              Search
+            </button>
+            {activeSearch && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Clear
+              </button>
+            )}
+          </form>
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
@@ -183,6 +257,11 @@ export default function AdminEnquiriesPage() {
                         <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium capitalize text-blue-700">
                           {enquiry.enquirer_type}
                         </span>
+                        {enquiry.mentor?.name && (
+                          <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                            Mentor: {enquiry.mentor.name}
+                          </span>
+                        )}
                       </div>
                       <a
                         href={`tel:${enquiry.phone}`}
