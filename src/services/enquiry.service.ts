@@ -5,8 +5,11 @@ import { API } from "@/constants/api";
 export interface EnquiryPayload {
   name: string;
   phone: string;
+  subject: string;
+  grade: string;
   enquirer_type: string;
   message: string;
+  mentor: number;
 }
 
 export interface EnquiryRecord {

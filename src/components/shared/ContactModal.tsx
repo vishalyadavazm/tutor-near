@@ -53,11 +53,11 @@ export default function ContactModal({ teacher, onClose }: Props) {
   const [email, setEmail]         = useState("");
   const [subject, setSubject]     = useState(teacher.courses[0] ?? "");
   const [grade, setGrade]         = useState("");
-  const [modeP, setModeP]         = useState<"Online" | "Offline" | "Both">("Both");
   const [message, setMessage]     = useState("");
   const [errors, setErrors]       = useState<Record<string, string>>({});
 
   const overlayRef = useRef<HTMLDivElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   /* close on Escape */
   useEffect(() => {
@@ -130,15 +130,19 @@ export default function ContactModal({ teacher, onClose }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      if (errs.message) {
+        messageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        messageRef.current?.focus({ preventScroll: true });
+      }
+      return;
+    }
     setErrors({});
     setLoading(true);
     const enquiryMessage = [
       `Teacher: ${teacher.name}`,
       "Request type: inquiry",
-      `Subject: ${subject}`,
-      grade ? `Grade / Class: ${grade}` : null,
-      `Preferred mode: ${modeP}`,
       "",
       message.trim(),
     ].filter((line): line is string => line !== null).join("\n");
@@ -147,8 +151,11 @@ export default function ContactModal({ teacher, onClose }: Props) {
       await enquiryService.create({
         name: name.trim(),
         phone: phone.replace(/\s/g, ""),
+        subject,
+        grade,
         enquirer_type: "student",
         message: enquiryMessage,
+        mentor: teacher.id,
       });
       setSubmitted(true);
     } catch (error) {
@@ -303,32 +310,10 @@ export default function ContactModal({ teacher, onClose }: Props) {
                 </Field>
               </div>
 
-              {/* Mode preference */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700 block mb-2">
-                  Preferred Mode
-                </label>
-                <div className="flex gap-2">
-                  {(["Online", "Offline", "Both"] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setModeP(m)}
-                      className={`flex-1 py-2 rounded-xl border text-xs font-semibold transition-all ${
-                        modeP === m
-                          ? "border-orange-400 text-orange-700 bg-orange-50"
-                          : "border-gray-200 text-gray-500 hover:border-gray-300"
-                      }`}
-                    >
-                      {m === "Online" ? "💻 Online" : m === "Offline" ? "🏠 Offline" : "🔄 Both"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Message */}
               <Field label="Message" required error={errors.message}>
                 <textarea
+                  ref={messageRef}
                   value={message}
                   onChange={(e) => {
                     setMessage(e.target.value);
