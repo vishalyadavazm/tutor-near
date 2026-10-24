@@ -6,6 +6,7 @@ import { saveToken, saveAuthenticatedSession, clearAuth } from "@/utils/auth";
 export interface LoginRequest {
   email: string;
   password: string;
+  user_role?: "admin" | "staff";
 }
 
 export interface RegisterRequest {
@@ -45,6 +46,7 @@ export function extractRole(data: LoginResponse): string | null {
   if (!raw) return null;
   const role = raw.toLowerCase();
   if (role.includes("admin")) return "admin";
+  if (role.includes("staff")) return "staff";
   return role.includes("teacher") ? "teacher" : "student";
 }
 

@@ -68,7 +68,7 @@ export default function AdminReferenceList({ type }: Props) {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 lg:px-8">
-        <BackLink href="/admin">Admin dashboard</BackLink>
+        <BackLink href="/admin/dashboard">Admin dashboard</BackLink>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

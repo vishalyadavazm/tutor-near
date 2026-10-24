@@ -59,8 +59,8 @@ export const redirectByRole = (router: { push: (path: string) => void }) => {
     const role = getRole();
     if (role === "teacher") {
         router.push("/dashboard");
-    } else if (role === "admin") {
-        router.push("/admin");
+    } else if (role === "admin" || role === "staff") {
+        router.push("/admin/dashboard");
     } else {
         router.push("/student");
     }
