@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
+import BackLink from "@/components/common/BackLink";
 import {
   AiOutlineSearch,
   AiOutlineEnvironment,
@@ -26,7 +27,12 @@ import ContactModal from "@/components/shared/ContactModal";
 import JobPostSlider from "@/components/student/JobPostSlider";
 import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
 import studentService, { StudentPost, StudentProfileRecord } from "@/services/student.service";
-import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
+import {
+  DisplayTeacher,
+  formatExperience,
+  getInitials,
+  toDisplayTeacherFromDirectory,
+} from "@/utils/teacherDisplay";
 import { getIsTeacherSnapshot, subscribeToRoleChanges } from "@/utils/auth";
 
 const NAVY = "#15213D";
@@ -417,6 +423,7 @@ export default function StudentHome({
   const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
   const [myProfile, setMyProfile] = useState<StudentProfileRecord | null>(null);
   const [myProfileLoading, setMyProfileLoading] = useState(true);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const isTeacher = useSyncExternalStore(
     subscribeToRoleChanges,
     getIsTeacherSnapshot,
@@ -686,6 +693,12 @@ export default function StudentHome({
   );
 
   const studentCompletionPct = computeStudentCompletion(myProfile);
+  const studentName =
+    [myProfile?.user?.first_name, myProfile?.user?.last_name].filter(Boolean).join(" ") ||
+    myProfile?.user?.name ||
+    myProfile?.user?.email ||
+    "Student";
+  const studentInitials = getInitials(studentName);
   const profileBanner =
     !myProfileLoading && !bannerDismissed && studentCompletionPct < 100 ? (
       <div
@@ -732,7 +745,7 @@ export default function StudentHome({
 
       {/* ── Topbar ── */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-3 sm:px-5 h-16 flex items-center gap-2 sm:gap-4">
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
           {/* Logo */}
           <Link href="/student" className="flex items-center gap-2 shrink-0">
             <div
@@ -755,7 +768,7 @@ export default function StudentHome({
           </Link>
 
           {/* Inline search */}
-          <div className="min-w-0 flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 hover:border-orange-300 focus-within:border-orange-400 transition-colors">
+          <div className="flex min-w-[96px] flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 transition-colors hover:border-orange-300 focus-within:border-orange-400 sm:min-w-0">
             <AiOutlineSearch className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               type="text"
@@ -772,7 +785,7 @@ export default function StudentHome({
           </div>
 
           {/* City */}
-          <div className="flex shrink-0 items-center gap-1 border border-gray-200 rounded-xl px-2 sm:px-3 py-2 text-xs sm:text-sm text-gray-600 bg-white hover:border-orange-300 transition-colors">
+          <div className="hidden shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs text-gray-600 transition-colors hover:border-orange-300 sm:flex sm:px-3 sm:text-sm">
             <AiOutlineEnvironment className="w-4 h-4 text-sky-700 shrink-0" />
             <select
               value={cityFilter}
@@ -788,21 +801,41 @@ export default function StudentHome({
           </div>
 
           {/* Right */}
-          <div className="hidden xl:flex items-center gap-2 ml-auto">
-            <button className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="hidden h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 lg:flex"
+            >
               <AiOutlineBell className="w-4.5 h-4.5" />
             </button>
             <Link
               href="/profile"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-              style={{ background: NAVY }}
+              className="flex min-w-0 items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2 transition-colors hover:border-orange-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A] focus-visible:ring-offset-2"
               title="My Profile"
+              aria-label={`My profile: ${studentName}`}
             >
-              S
+              <span
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white ring-1 ring-black/5"
+                style={{ background: NAVY }}
+              >
+                {studentInitials}
+                {myProfile?.profile_pic && !profileImageFailed && (
+                  <img
+                    src={myProfile.profile_pic}
+                    alt=""
+                    onError={() => setProfileImageFailed(true)}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                )}
+              </span>
+              <span className="hidden max-w-[140px] truncate text-sm font-semibold text-[#15213D] sm:inline">
+                {myProfileLoading ? "Loading…" : studentName}
+              </span>
             </Link>
             <button
               onClick={() => AuthService.logout()}
-              className="hidden sm:flex px-3 py-2 rounded-xl text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-all"
+              className="rounded-xl border border-gray-200 bg-white px-2.5 py-2 text-xs font-medium text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 sm:px-3"
             >
               Logout
             </button>
@@ -811,14 +844,8 @@ export default function StudentHome({
       </nav>
 
       {(isTeacher || showTeacherDashboardBack) && (
-        <div className="mx-auto max-w-[1400px] px-5 pt-4">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15213D] shadow-sm transition-colors hover:border-[#E8621A] hover:text-[#E8621A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A] focus-visible:ring-offset-2"
-          >
-            <span aria-hidden="true" className="text-base leading-none">←</span>
-            Back to dashboard
-          </Link>
+        <div className="mx-auto max-w-[1400px] px-5 pt-3">
+          <BackLink href="/dashboard">Dashboard</BackLink>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearAuth } from "@/utils/auth";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -31,7 +32,7 @@ api.interceptors.response.use(
   (error) => {
     // Unauthorized
     if (typeof window !== "undefined" && error.response?.status === 401) {
-      localStorage.removeItem("authToken");
+      clearAuth();
 
       // Prevent redirect loop
       if (window.location.pathname !== "/login") {

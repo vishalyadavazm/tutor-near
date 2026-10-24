@@ -15,6 +15,7 @@ import {
 } from "react-icons/ai";
 import { BsShieldCheck, BsHeart, BsHeartFill, BsStarFill, BsStar } from "react-icons/bs";
 import { FiBookOpen } from "react-icons/fi";
+import BackLink from "@/components/common/BackLink";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import mentorService, { MentorComment, MentorDirectoryEntry } from "@/services/mentor.service";
@@ -505,14 +506,10 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   );
 
   const DashboardLink = (
-    <div className="mx-auto max-w-[1400px] px-5 pt-4">
-      <Link
-        href={isTeacher ? "/dashboard" : "/student"}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors hover:text-[#E8621A]"
-      >
-        <span aria-hidden="true">←</span>
-        {isTeacher ? "Back to teacher dashboard" : "Back to dashboard"}
-      </Link>
+    <div className="mx-auto max-w-[1400px] px-5 pt-3">
+      <BackLink href={isTeacher ? "/dashboard" : "/student"}>
+        Dashboard
+      </BackLink>
     </div>
   );
 

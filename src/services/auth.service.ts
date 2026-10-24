@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 import axios from "axios";
 import { API } from "@/constants/api";
-import { saveToken, removeToken } from "@/utils/auth";
+import { saveToken, saveAuthenticatedSession, clearAuth } from "@/utils/auth";
 
 export interface LoginRequest {
   email: string;
@@ -61,6 +61,7 @@ class AuthService {
         saveToken(token);
       }
 
+      saveAuthenticatedSession();
       return res.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -170,11 +171,14 @@ class AuthService {
   }
 
   logout() {
-    removeToken();
-
-    if (globalThis.window !== undefined) {
-      globalThis.window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("logout-confirmation-requested"));
     }
+  }
+
+  confirmLogout() {
+    clearAuth();
+    window.location.replace("/login");
   }
   sendEmailOTP(email: string) {
     return api.post(API.EMAIL_SEND_OTP, {

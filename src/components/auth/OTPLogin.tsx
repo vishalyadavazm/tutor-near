@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import AuthService, { extractRole } from "@/services/auth.service";
-import { saveRole, saveToken, redirectByRole } from "@/utils/auth";
+import { saveRole, saveToken, saveAuthenticatedSession, redirectByRole } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -117,6 +117,7 @@ export default function OTPLogin() {
         saveToken(token);
       }
 
+      saveAuthenticatedSession();
       const roleFromApi = extractRole(res.data);
       if (roleFromApi) saveRole(roleFromApi);
 

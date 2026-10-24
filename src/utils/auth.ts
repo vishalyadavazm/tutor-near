@@ -6,7 +6,12 @@ export const saveToken = (token: string) => {
 export const getToken = () => {
     return localStorage.getItem("authToken");
 };
-//test
+
+export const saveAuthenticatedSession = () => {
+    localStorage.setItem("authSession", "true");
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
+};
+
 export const removeToken = () => {
     localStorage.removeItem("authToken");
     if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
@@ -34,8 +39,20 @@ export const subscribeToRoleChanges = (onChange: () => void) => {
 export const getIsTeacherSnapshot = () =>
     typeof window !== "undefined" && getRole() === "teacher";
 
+export const getIsAuthenticatedSnapshot = () =>
+    typeof window !== "undefined" &&
+    (!!getToken() || localStorage.getItem("authSession") === "true");
+
+export const clearAuth = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authSession");
+    localStorage.removeItem("userRole");
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
+};
+
 export const removeRole = () => {
     localStorage.removeItem("userRole");
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
 };
 
 export const redirectByRole = (router: { push: (path: string) => void }) => {

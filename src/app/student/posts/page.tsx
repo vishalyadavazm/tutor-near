@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import BackLink from "@/components/common/BackLink";
 import JobPostListItem from "@/components/student/JobPostListItem";
 import JobPostDetailsModal from "@/components/student/JobPostDetailsModal";
 import StudentJobPostCreator from "@/components/student/StudentJobPostCreator";
@@ -65,7 +66,7 @@ export default function StudentPostsPage() {
   return (
     <main className="min-h-screen bg-[#F7F9FC] text-[#111827]">
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-3 sm:px-5">
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-3 sm:px-5">
           <Link href="/student" className="flex items-center gap-2 shrink-0">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#15213D] shadow-sm">
               <svg className="h-4 w-4" fill="white" viewBox="0 0 24 24" aria-hidden="true">
@@ -82,19 +83,14 @@ export default function StudentPostsPage() {
               </span>
             </span>
           </Link>
-          <span className="text-xs font-medium text-gray-500 sm:hidden">Job posts</span>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1120px] px-4 py-5 sm:px-6 sm:py-7">
-        <Link
-          href="/student"
-          className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors hover:text-[#E8621A]"
-        >
-          <span aria-hidden="true">←</span>
-          Back to dashboard
-        </Link>
+      <div className="mx-auto max-w-[1400px] px-4 pt-3 sm:px-5">
+        <BackLink href="/student">Dashboard</BackLink>
+      </div>
 
+      <div className="mx-auto max-w-[1120px] px-4 py-5 sm:px-6 sm:py-7">
         <section className="mb-5 rounded-xl border border-[#E4E9F0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>

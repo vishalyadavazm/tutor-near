@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import BackLink from "@/components/common/BackLink";
 import {
   AiOutlineUser,
   AiOutlineCamera,
@@ -10,7 +11,6 @@ import {
   AiOutlineEnvironment,
   AiOutlineCheckCircle,
   AiOutlineSave,
-  AiOutlineArrowLeft,
   AiOutlineCalendar,
 } from "react-icons/ai";
 import {
@@ -491,14 +491,6 @@ export default function TeacherProfile() {
             </span>
           </Link>
 
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors ml-2"
-          >
-            <AiOutlineArrowLeft className="w-4 h-4" />
-            Dashboard
-          </Link>
-
           <div className="flex-1" />
 
           {/* Right */}
@@ -535,6 +527,10 @@ export default function TeacherProfile() {
         </div>
       </nav>
 
+      <div className="mx-auto max-w-[1400px] px-5 pt-3">
+        <BackLink href="/dashboard">Dashboard</BackLink>
+      </div>
+
       {/* ── Body ── */}
       <div className="max-w-[1400px] mx-auto px-5 py-6">
 
@@ -549,12 +545,6 @@ export default function TeacherProfile() {
         {loadingProfile && (
           <div className="mb-5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-600">
             Loading your profile…
-          </div>
-        )}
-
-        {!loadingProfile && existingProfile && (
-          <div className="mb-5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
-            This form has been pre-filled with your existing profile. You can update just the fields you want to change — your current photo is kept unless you choose a new one.
           </div>
         )}
 

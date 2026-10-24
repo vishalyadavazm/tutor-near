@@ -10,7 +10,6 @@ import {
   AiOutlineCheckCircle,
   AiOutlineCloseCircle,
   AiOutlineClose,
-  AiOutlineMessage,
 } from "react-icons/ai";
 import { BsShieldCheck, BsLightbulb } from "react-icons/bs";
 import { FiChevronRight, FiZap } from "react-icons/fi";
@@ -157,19 +156,29 @@ export default function TeacherDashboard() {
           {/* Right actions */}
           <div className="flex items-center gap-2 ml-auto">
             <button className="relative w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-              <AiOutlineMessage className="w-4.5 h-4.5" />
-            </button>
-            <button className="relative w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
               <AiOutlineBell className="w-4.5 h-4.5" />
             </button>
 
             <Link
               href="/profile"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-              style={{ background: NAVY }}
+              className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               title="My Profile"
             >
-              {displayInitials}
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+                style={{ background: NAVY }}
+              >
+                {myProfile?.profile_pic ? (
+                  <img
+                    src={myProfile.profile_pic}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  displayInitials
+                )}
+              </span>
+              <span className="hidden sm:block max-w-40 truncate">{displayName}</span>
             </Link>
 
             <button
