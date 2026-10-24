@@ -43,7 +43,9 @@ export function extractRole(data: LoginResponse): string | null {
     data.data?.user_type ||
     null;
   if (!raw) return null;
-  return raw.toLowerCase().includes("teacher") ? "teacher" : "student";
+  const role = raw.toLowerCase();
+  if (role.includes("admin")) return "admin";
+  return role.includes("teacher") ? "teacher" : "student";
 }
 
 class AuthService {
