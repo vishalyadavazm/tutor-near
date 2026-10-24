@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   AiOutlineEnvironment,
@@ -19,6 +19,7 @@ import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import mentorService, { MentorComment, MentorDirectoryEntry } from "@/services/mentor.service";
 import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
+import { getIsTeacherSnapshot, subscribeToRoleChanges } from "@/utils/auth";
 
 /* ── Brand ──────────────────────────────────────── */
 const NAVY = "#15213D";
@@ -243,6 +244,11 @@ function MoreProfilesSidebar({
 /* ─── Main component ─────────────────────────────── */
 export default function TeacherPublicProfile({ teacherId }: { teacherId: number }) {
 
+  const isTeacher = useSyncExternalStore(
+    subscribeToRoleChanges,
+    getIsTeacherSnapshot,
+    () => false,
+  );
   const [profile, setProfile] = useState<MentorDirectoryEntry | null>(null);
   const [recommendations, setRecommendations] = useState<MentorDirectoryEntry[]>([]);
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
@@ -501,11 +507,11 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
   const DashboardLink = (
     <div className="mx-auto max-w-[1400px] px-5 pt-4">
       <Link
-        href="/student"
+        href={isTeacher ? "/dashboard" : "/student"}
         className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors hover:text-[#E8621A]"
       >
         <span aria-hidden="true">←</span>
-        Back to dashboard
+        {isTeacher ? "Back to teacher dashboard" : "Back to dashboard"}
       </Link>
     </div>
   );

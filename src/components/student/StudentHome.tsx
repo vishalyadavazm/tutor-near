@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   AiOutlineSearch,
@@ -27,6 +27,7 @@ import JobPostSlider from "@/components/student/JobPostSlider";
 import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
 import studentService, { StudentPost, StudentProfileRecord } from "@/services/student.service";
 import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
+import { getIsTeacherSnapshot, subscribeToRoleChanges } from "@/utils/auth";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -390,7 +391,11 @@ function TeacherListItem({
 }
 
 /* ─── Main component ─────────────────────────────── */
-export default function StudentHome() {
+export default function StudentHome({
+  showTeacherDashboardBack = false,
+}: {
+  showTeacherDashboardBack?: boolean;
+}) {
   const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [posts, setPosts] = useState<StudentPost[]>([]);
@@ -412,6 +417,11 @@ export default function StudentHome() {
   const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
   const [myProfile, setMyProfile] = useState<StudentProfileRecord | null>(null);
   const [myProfileLoading, setMyProfileLoading] = useState(true);
+  const isTeacher = useSyncExternalStore(
+    subscribeToRoleChanges,
+    getIsTeacherSnapshot,
+    () => false,
+  );
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -799,6 +809,18 @@ export default function StudentHome() {
           </div>
         </div>
       </nav>
+
+      {(isTeacher || showTeacherDashboardBack) && (
+        <div className="mx-auto max-w-[1400px] px-5 pt-4">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15213D] shadow-sm transition-colors hover:border-[#E8621A] hover:text-[#E8621A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A] focus-visible:ring-offset-2"
+          >
+            <span aria-hidden="true" className="text-base leading-none">←</span>
+            Back to dashboard
+          </Link>
+        </div>
+      )}
 
       <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-4">
         {postsLoading || postsError || posts.length > 0 ? (

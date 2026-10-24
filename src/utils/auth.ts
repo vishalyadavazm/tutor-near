@@ -14,11 +14,25 @@ export const removeToken = () => {
 
 export const saveRole = (role: string) => {
     localStorage.setItem("userRole", role.toLowerCase());
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
 };
 
 export const getRole = (): string | null => {
     return localStorage.getItem("userRole");
 };
+
+export const subscribeToRoleChanges = (onChange: () => void) => {
+    if (typeof window === "undefined") return () => {};
+    window.addEventListener("storage", onChange);
+    window.addEventListener("auth-state-change", onChange);
+    return () => {
+        window.removeEventListener("storage", onChange);
+        window.removeEventListener("auth-state-change", onChange);
+    };
+};
+
+export const getIsTeacherSnapshot = () =>
+    typeof window !== "undefined" && getRole() === "teacher";
 
 export const removeRole = () => {
     localStorage.removeItem("userRole");

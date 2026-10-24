@@ -5,17 +5,14 @@ import Link from "next/link";
 import {
   AiOutlineDashboard,
   AiOutlineUser,
-  AiOutlineCalendar,
-  AiOutlineTeam,
-  AiOutlineStar,
-  AiOutlineSetting,
+  AiOutlineSearch,
   AiOutlineBell,
   AiOutlineCheckCircle,
   AiOutlineCloseCircle,
   AiOutlineClose,
   AiOutlineMessage,
 } from "react-icons/ai";
-import { BsCurrencyRupee, BsShieldCheck, BsLightbulb } from "react-icons/bs";
+import { BsShieldCheck, BsLightbulb } from "react-icons/bs";
 import { FiChevronRight, FiZap } from "react-icons/fi";
 import AuthService from "@/services/auth.service";
 import mentorService, { MentorProfileRecord } from "@/services/mentor.service";
@@ -57,11 +54,7 @@ function computeProfileCompletion(p: MentorProfileRecord | null): {
 const NAV_ITEMS = [
   { icon: <AiOutlineDashboard className="w-5 h-5" />, label: "Dashboard", href: "/dashboard" },
   { icon: <AiOutlineUser className="w-5 h-5" />, label: "My Profile", href: "/profile" },
-  { icon: <AiOutlineCalendar className="w-5 h-5" />, label: "Sessions", href: "/sessions" },
-  { icon: <AiOutlineTeam className="w-5 h-5" />, label: "My Students", href: "/students" },
-  { icon: <BsCurrencyRupee className="w-5 h-5" />, label: "Earnings", href: "/earnings" },
-  { icon: <AiOutlineStar className="w-5 h-5" />, label: "Reviews", href: "/reviews" },
-  { icon: <AiOutlineSetting className="w-5 h-5" />, label: "Settings", href: "/settings" },
+  { icon: <AiOutlineSearch className="w-5 h-5" />, label: "Browse Teachers", href: "/student" },
 ];
 
 /* ─── Sub-components ──────────────────────────────── */
@@ -151,6 +144,14 @@ export default function TeacherDashboard() {
               <span style={{ color: NAVY }}>Tutor</span>
               <span style={{ color: ORANGE }}>Near</span>
             </span>
+          </Link>
+
+          <Link
+            href="/teachers"
+            className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          >
+            <AiOutlineSearch className="h-4 w-4" />
+            Browse teachers
           </Link>
 
           {/* Right actions */}
@@ -277,6 +278,13 @@ export default function TeacherDashboard() {
                 Manage your teacher profile and account
               </p>
             </div>
+            <Link
+              href="/teachers"
+              className="inline-flex sm:hidden items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition-colors hover:border-orange-200 hover:text-[#E8621A]"
+            >
+              <AiOutlineSearch className="h-4 w-4" />
+              Browse teachers
+            </Link>
           </div>
 
           {profileError && (
