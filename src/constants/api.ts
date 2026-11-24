@@ -1,5 +1,8 @@
 export const API = {
   LOGIN: "/auth/passwordlogin/",
+  ADMIN_LOGIN: "/auth/adminpasswordlogin",
+  REGISTER_STAFF: "/auth/registerstaffnewuser",
+  ALL_STAFF: "/auth/allstaff",
   REGISTER: "/auth/registernewuser/",
   REGISTER_OTP: "/auth/registersendotp/",
   LOGIN_OTP: "/auth/loginotp/",

@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 import { useRef, useState } from "react";
 import { AiOutlinePlus } from "react-icons/ai";
 import studentService from "@/services/student.service";
@@ -15,7 +17,6 @@ export default function StudentJobPostCreator({
   const [banner, setBanner] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -27,7 +28,6 @@ export default function StudentJobPostCreator({
 
     setSubmitting(true);
     setSubmitError(null);
-    setSubmitSuccess(null);
     try {
       await studentService.createPost({
         title: title.trim(),
@@ -39,7 +39,7 @@ export default function StudentJobPostCreator({
       setBanner(null);
       formRef.current?.reset();
       setFormOpen(false);
-      setSubmitSuccess("Your job post was created.");
+      notifySuccess("Your job post was created successfully.", "post-create");
       onCreated();
     } catch (error) {
       setSubmitError(
@@ -57,7 +57,6 @@ export default function StudentJobPostCreator({
         onClick={() => {
           setFormOpen((open) => !open);
           setSubmitError(null);
-          setSubmitSuccess(null);
         }}
         aria-expanded={formOpen}
         className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
@@ -67,11 +66,6 @@ export default function StudentJobPostCreator({
         Create job post
       </button>
 
-      {submitSuccess && (
-        <p role="status" className="mt-3 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {submitSuccess}
-        </p>
-      )}
 
       {formOpen && (
         <form

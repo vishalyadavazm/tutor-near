@@ -9,5 +9,5 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (pathname.replace(/\/+$/, "") === "/admin") return children;
 
-  return <RequireAuth allowedRoles={["admin", "staff"]}>{children}</RequireAuth>;
+  return <RequireAuth allowedRoles={["admin", "staff"]} loginPath="/admin">{children}</RequireAuth>;
 }

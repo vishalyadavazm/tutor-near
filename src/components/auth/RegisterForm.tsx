@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,11 +82,13 @@ function TypeCard({
 function OTPScreen({
   email,
   onVerify,
+  onResend,
   onSuccess,
   onBack,
 }: {
   email: string;
   onVerify: (otp: string) => Promise<void>;
+  onResend: () => Promise<void>;
   onSuccess: () => void;
   onBack: () => void;
 }) {
@@ -92,34 +96,14 @@ function OTPScreen({
   const [otpError, setOtpError] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
-  const [canResend, setCanResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const canResend = resendTimer === 0;
 
   useEffect(() => {
-    let t = 30;
-    const interval = setInterval(() => {
-      t -= 1;
-      setResendTimer(t);
-      if (t <= 0) {
-        clearInterval(interval);
-        setCanResend(true);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const startResendTimer = () => {
-    setCanResend(false);
-    setResendTimer(30);
-    let t = 30;
-    const interval = setInterval(() => {
-      t -= 1;
-      setResendTimer(t);
-      if (t <= 0) {
-        clearInterval(interval);
-        setCanResend(true);
-      }
-    }, 1000);
-  };
+    if (resendTimer <= 0) return;
+    const timer = setTimeout(() => setResendTimer((current) => current - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendTimer]);
 
   const handleVerify = async () => {
     if (otp.length < 6) {
@@ -130,20 +114,30 @@ function OTPScreen({
     setIsVerifying(true);
     try {
       await onVerify(otp);
-      setIsVerifying(false);
       onSuccess();
     } catch (error) {
       setOtpError(
         error instanceof Error ? error.message : "OTP verification failed.",
       );
+    } finally {
+      setIsVerifying(false);
     }
   };
 
-  const handleResend = () => {
-    setOtp("");
+  const handleResend = async () => {
+    if (isResending || isVerifying || !canResend) return;
+    setIsResending(true);
     setOtpError("");
-    // TODO: resend OTP API call
-    startResendTimer();
+    try {
+      await onResend();
+      setOtp("");
+      setResendTimer(30);
+      notifySuccess("A new verification code has been sent.", "auth-register-otp");
+    } catch (error) {
+      setOtpError(error instanceof Error ? error.message : "Unable to resend OTP.");
+    } finally {
+      setIsResending(false);
+    }
   };
 
   return (
@@ -175,7 +169,7 @@ function OTPScreen({
 
       <Button
         onClick={handleVerify}
-        disabled={otp.length < 6}
+        disabled={otp.length < 6 || isResending}
         loading={isVerifying}
         loadingText="Verifying…"
       >
@@ -187,9 +181,10 @@ function OTPScreen({
         {canResend ? (
           <button
             onClick={handleResend}
+            disabled={isResending || isVerifying}
             className="font-semibold text-brand-orange hover:underline"
           >
-            Resend OTP
+            {isResending ? "Sending..." : "Resend OTP"}
           </button>
         ) : (
           <span className="text-gray-400">Resend in {resendTimer}s</span>
@@ -253,6 +248,7 @@ export default function RegisterForm() {
         profile_type: userType!.charAt(0).toUpperCase() + userType!.slice(1),
       });
 
+      notifySuccess("Verification code sent to your email.", "auth-register-otp");
       setRegisteredEmail(data.email);
       setStep("otp");
     } catch (error) {
@@ -284,6 +280,7 @@ export default function RegisterForm() {
   };
 
   const handleOTPSuccess = () => {
+    notifySuccess("Account created successfully. Please sign in.", "auth-registration");
     router.push("/login");
   };
 
@@ -301,6 +298,18 @@ export default function RegisterForm() {
         <OTPScreen
           email={registeredEmail}
           onVerify={handleRegisterNewUser}
+          onResend={async () => {
+            if (!registrationData || !userType) throw new Error("Missing registration data.");
+            await AuthService.sendRegisterOTP({
+              first_name: registrationData.firstName,
+              last_name: registrationData.lastName,
+              email: registrationData.email,
+              phone: registrationData.phone,
+              password: registrationData.password,
+              role: userType,
+              profile_type: userType.charAt(0).toUpperCase() + userType.slice(1),
+            });
+          }}
           onSuccess={handleOTPSuccess}
           onBack={() => setStep("form")}
         />

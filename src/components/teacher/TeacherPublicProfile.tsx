@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
@@ -366,6 +368,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     try {
       await mentorService.toggleLike(teacherId, !!teacher?.isLiked);
       await refreshProfile();
+      notifySuccess(teacher?.isLiked ? "Tutor removed from your saved list." : "Tutor saved.", "tutor-save");
     } catch (err) {
       setLikeError(err instanceof Error ? err.message : "Couldn't update like.");
     } finally {
@@ -379,6 +382,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     try {
       await mentorService.rateMentor(teacherId, value);
       await refreshProfile();
+      notifySuccess("Rating submitted. Thank you!", "tutor-rating");
     } catch (err) {
       setRateError(err instanceof Error ? err.message : "Couldn't submit rating.");
     } finally {
@@ -395,6 +399,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     setCommentSubmitError(null);
     try {
       await mentorService.addMentorComment(teacherId, comment);
+      notifySuccess("Comment posted successfully.", "comment-create");
     } catch (err) {
       setCommentSubmitError(err instanceof Error ? err.message : "Unable to post comment.");
       setSubmittingComment(false);
@@ -435,6 +440,7 @@ export default function TeacherPublicProfile({ teacherId }: { teacherId: number 
     setEditCommentError(null);
     try {
       await mentorService.updateMentorComment(commentId, comment);
+      notifySuccess("Comment updated successfully.", "comment-update");
     } catch (err) {
       setEditCommentError(err instanceof Error ? err.message : "Unable to update comment.");
       setSavingComment(false);

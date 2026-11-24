@@ -1,5 +1,9 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
+import Select from "@/components/ui/Select";
+
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -302,6 +306,7 @@ export default function StudentProfile() {
       } else {
         await studentService.createProfile(payload);
       }
+      notifySuccess("Profile saved successfully.", "profile-save");
       router.push("/student");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Unable to save profile.");
@@ -486,17 +491,14 @@ export default function StudentProfile() {
             <SectionCard icon={<AiOutlineCalendar className="w-4 h-4" />} title="Personal Details">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Gender" required error={genderError}>
-                  <select
-                    className={inputCls}
-                    style={fieldStyle(!!genderError)}
+                  <Select
+                    aria-label="Gender"
                     value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                  >
-                    <option value="">Select gender</option>
-                    {GENDERS.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
+                    onValueChange={setGender}
+                    options={[{ value: "", label: "Select gender" }, ...GENDERS.map((gender) => ({ value: gender, label: gender }))]}
+                    invalid={!!genderError}
+                    required
+                  />
                 </Field>
                 <Field label="Date of Birth">
                   <input
@@ -612,18 +614,15 @@ export default function StudentProfile() {
             {/* ── Class / Qualification ── */}
             <SectionCard icon={<MdOutlineSchool className="w-4 h-4" />} title="Class / Qualification">
               <Field label="Current class or qualification" required error={standardError}>
-                <select
-                  className={inputCls}
-                  style={fieldStyle(!!standardError)}
+                <Select
+                  aria-label="Current class or qualification"
                   value={standardId ?? ""}
-                  onChange={(e) => setStandardId(e.target.value ? Number(e.target.value) : undefined)}
+                  onValueChange={(value) => setStandardId(value ? Number(value) : undefined)}
+                  options={[{ value: "", label: "Select your current class / qualification" }, ...standardOptions.map((standard) => ({ value: standard.id, label: standard.degree_name }))]}
                   disabled={loadingOptions}
-                >
-                  <option value="">Select your current class / qualification</option>
-                  {standardOptions.map((s) => (
-                    <option key={s.id} value={s.id}>{s.degree_name}</option>
-                  ))}
-                </select>
+                  invalid={!!standardError}
+                  required
+                />
               </Field>
             </SectionCard>
 

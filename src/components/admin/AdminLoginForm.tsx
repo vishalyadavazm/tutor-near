@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +28,9 @@ export default function AdminLoginForm() {
     setSubmitError("");
 
     try {
-      const response = await AuthService.login({ email, password, user_role: accountType });
+      const response = accountType === "admin"
+        ? await AuthService.adminLogin({ email: email.trim(), password })
+        : await AuthService.login({ email: email.trim(), password, user_role: "staff" });
       const authenticatedRole = extractRole(response);
 
       if (authenticatedRole !== accountType) {
@@ -40,6 +44,7 @@ export default function AdminLoginForm() {
       }
 
       saveRole(authenticatedRole);
+      notifySuccess("Welcome back! You’re signed in.", "auth-login");
       router.replace("/admin/dashboard");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Sign-in failed.");
@@ -57,7 +62,7 @@ export default function AdminLoginForm() {
         <p className="mt-8 text-sm font-semibold uppercase tracking-wide text-brand-orange">
           Secure portal
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-brand-navy">Admin sign in</h1>
+        <h1 className="mt-1 text-2xl font-bold text-brand-navy">{accountType === "admin" ? "Admin" : "Staff"} sign in</h1>
         <p className="mt-2 text-sm text-gray-500">
           Sign in to manage TutorNear administration.
         </p>
@@ -67,6 +72,7 @@ export default function AdminLoginForm() {
             <button
               key={type}
               type="button"
+              disabled={isLoading}
               onClick={() => {
                 setAccountType(type);
                 setSubmitError("");
@@ -85,6 +91,7 @@ export default function AdminLoginForm() {
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <Input
+            disabled={isLoading}
             id="admin-email"
             label="Email address"
             type="email"
@@ -96,6 +103,7 @@ export default function AdminLoginForm() {
             required
           />
           <PasswordInput
+            disabled={isLoading}
             id="admin-password"
             label="Password"
             autoComplete="current-password"

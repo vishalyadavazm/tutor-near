@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 /**
  * Uses the shared navy and orange TutorNear palette. Progress completion
  * and success states remain green to distinguish them from brand styling.
@@ -62,6 +64,7 @@ export default function ForgotPasswordForm() {
     setEmailError("");
     try {
       await AuthService.sendResetPasswordOTP(data.email);
+      notifySuccess("Password reset code sent to your email.", "auth-reset-otp");
       setSentEmail(data.email);
       setStep("otp");
       setTimer(OTP_RESEND_SECONDS);
@@ -78,6 +81,7 @@ export default function ForgotPasswordForm() {
     setOtpError("");
     try {
       await AuthService.sendResetPasswordOTP(sentEmail);
+      notifySuccess("A new password reset code has been sent.", "auth-reset-otp");
       setTimer(OTP_RESEND_SECONDS);
     } catch (error) {
       setOtpError(error instanceof Error ? error.message : "Unable to resend OTP.");
@@ -97,6 +101,7 @@ export default function ForgotPasswordForm() {
     setResetError("");
     try {
       await AuthService.verifyResetPassword(sentEmail, otp, data.newPassword, data.confirmPassword);
+      notifySuccess("Password updated successfully. Please sign in.", "auth-password-reset");
       setStep("success");
     } catch (error) {
       setResetError(error instanceof Error ? error.message : "Unable to reset password.");

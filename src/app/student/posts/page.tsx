@@ -1,5 +1,7 @@
 "use client";
 
+import Select from "@/components/ui/Select";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import BackLink from "@/components/common/BackLink";
@@ -112,14 +114,13 @@ export default function StudentPostsPage() {
             <StudentJobPostCreator onCreated={() => setRetryCount((count) => count + 1)} />
             <label className="flex items-center gap-2 text-[11px] text-gray-500">
               Sort by:
-              <select
+              <Select
+                aria-label="Sort job posts"
                 value={sortOrder}
-                onChange={(event) => setSortOrder(event.target.value as "recent" | "oldest")}
-                className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-orange-300"
-              >
-                <option value="recent">Most Recent</option>
-                <option value="oldest">Oldest</option>
-              </select>
+                onValueChange={(value) => setSortOrder(value as "recent" | "oldest")}
+                options={[{ value: "recent", label: "Most Recent" }, { value: "oldest", label: "Oldest" }]}
+                compact
+              />
             </label>
           </div>
         </section>

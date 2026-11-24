@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -35,6 +37,7 @@ export default function LoginForm() {
       const res = await AuthService.login(data);
       const roleFromApi = extractRole(res);
       if (roleFromApi) saveRole(roleFromApi);
+      notifySuccess("Welcome back! You’re signed in.", "auth-login");
       redirectByRole(router);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Login failed.");

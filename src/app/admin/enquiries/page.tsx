@@ -1,5 +1,7 @@
 "use client";
 
+import Select from "@/components/ui/Select";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import BackLink from "@/components/common/BackLink";
@@ -133,14 +135,12 @@ export default function AdminEnquiriesPage() {
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-gray-600">
               Sort by:
-              <select
+              <Select
+                aria-label="Sort enquiries"
                 value={sortOrder}
-                onChange={(event) => setSortOrder(event.target.value as "recent" | "oldest")}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-300"
-              >
-                <option value="recent">Most Recent</option>
-                <option value="oldest">Oldest</option>
-              </select>
+                onValueChange={(value) => setSortOrder(value as "recent" | "oldest")}
+                options={[{ value: "recent", label: "Most Recent" }, { value: "oldest", label: "Oldest" }]}
+              />
             </label>
             <button
               type="button"
@@ -160,18 +160,18 @@ export default function AdminEnquiriesPage() {
             className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row"
           >
             <label className="sr-only" htmlFor="enquiry-search-field">Search field</label>
-            <select
+            <Select
               id="enquiry-search-field"
+              aria-label="Search field"
               value={searchField}
-              onChange={(event) => setSearchField(
-                event.target.value as "name" | "mentor.name" | "assigned_to.name",
-              )}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-300"
-            >
-              <option value="name">Enquirer name</option>
-              <option value="mentor.name">Mentor name</option>
-              <option value="assigned_to.name">Assigned name</option>
-            </select>
+              onValueChange={(value) => setSearchField(value as "name" | "mentor.name" | "assigned_to.name")}
+              options={[
+                { value: "name", label: "Enquirer name" },
+                { value: "mentor.name", label: "Mentor name" },
+                { value: "assigned_to.name", label: "Assigned name" },
+              ]}
+              className="sm:w-48 sm:shrink-0"
+            />
             <label className="sr-only" htmlFor="enquiry-search">Search enquiries</label>
             <input
               id="enquiry-search"

@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useSyncExternalStore } from "react";
+import { notifySuccess } from "@/lib/notifications";
+
+import Select from "@/components/ui/Select";
+
+import React, { useState, useMemo, useEffect, useId, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import BackLink from "@/components/common/BackLink";
 import {
@@ -72,10 +76,14 @@ function FilterSection({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const contentId = useId();
   return (
     <div className="border-b border-gray-100 py-4">
       <button
         className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 mb-3 group"
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentId}
         onClick={() => setOpen((o) => !o)}
       >
         {title}
@@ -83,7 +91,7 @@ function FilterSection({
           className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""} group-hover:text-gray-600`}
         />
       </button>
-      {open && <div className="animate-fade-in-up">{children}</div>}
+      <div id={contentId} hidden={!open} className="animate-fade-in-up">{children}</div>
     </div>
   );
 }
@@ -98,12 +106,11 @@ function CheckboxFilter({
   onChange: () => void;
 }) {
   return (
-    <label
-      className="flex items-center gap-2.5 cursor-pointer py-1 group"
-      onClick={onChange}
-    >
-      <div
-        className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200 group-hover:scale-110"
+    <label className="flex items-center gap-2.5 cursor-pointer py-1 group">
+      <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
+      <span
+        aria-hidden="true"
+        className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200 group-hover:scale-110 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#E8621A]"
         style={checked ? { background: ORANGE, borderColor: ORANGE } : { borderColor: "#D1D5DB" }}
       >
         {checked && (
@@ -111,9 +118,44 @@ function CheckboxFilter({
             <path d="M10 3L5 8.5 2 5.5" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
-      </div>
+      </span>
       <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{label}</span>
     </label>
+  );
+}
+
+function ExperienceFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const groupName = useId();
+  return (
+    <fieldset className="flex flex-col gap-1">
+      <legend className="sr-only">Tutor experience</legend>
+      {EXP_BUCKETS.map((bucket) => (
+        <label key={bucket.label} className="flex items-center gap-2.5 cursor-pointer py-1">
+          <input
+            type="radio"
+            name={groupName}
+            value={bucket.label}
+            checked={value === bucket.label}
+            onChange={() => { if (value !== bucket.label) onChange(bucket.label); }}
+            onClick={() => { if (value === bucket.label) onChange(""); }}
+            className="peer sr-only"
+          />
+          <span
+            aria-hidden="true"
+            className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#E8621A]"
+            style={{ borderColor: value === bucket.label ? ORANGE : "#D1D5DB" }}
+          >
+            {value === bucket.label && <span className="w-2 h-2 rounded-full" style={{ background: ORANGE }} />}
+          </span>
+          <span className="text-sm text-gray-600">{bucket.label}</span>
+        </label>
+      ))}
+      {value && (
+        <button type="button" onClick={() => onChange("")} className="text-xs mt-1 text-left hover:underline" style={{ color: ORANGE }}>
+          Clear
+        </button>
+      )}
+    </fieldset>
   );
 }
 
@@ -305,7 +347,7 @@ function TeacherListItem({
       className="group bg-white border border-gray-100 rounded-2xl p-5 hover:border-orange-200 hover:shadow-md transition-all duration-150 animate-fade-in-up"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
-      <div className="flex items-start gap-4">
+      <div className="grid grid-cols-[56px_minmax(0,1fr)] items-start gap-4 sm:flex">
         <Avatar t={t} sizeClass="w-14 h-14" textSizeClass="text-lg" />
 
         {/* Content */}
@@ -313,7 +355,7 @@ function TeacherListItem({
           <div className="flex items-center gap-1.5 flex-wrap">
             <Link
               href={`/teacher/${t.id}`}
-              className="text-base font-semibold truncate max-w-70 hover:underline group-hover:text-[#E8621A] transition-colors"
+              className="text-base font-semibold truncate min-w-0 max-w-full sm:max-w-70 hover:underline group-hover:text-[#E8621A] transition-colors"
               style={{ color: NAVY }}
               title={t.name}
             >
@@ -327,13 +369,13 @@ function TeacherListItem({
 
           <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
             <StarRating rating={t.rating} reviewCount={t.reviewCount} />
-            <span className="flex items-center gap-1 text-xs text-gray-500">
+            <span className="flex min-w-0 max-w-full items-center gap-1 text-xs text-gray-500">
               <MdOutlineWork className="w-3.5 h-3.5 shrink-0 text-gray-400" />
               {formatExperience(t.experienceYears)}
             </span>
-            <span className="flex items-center gap-1 text-xs text-gray-500">
+            <span className="flex min-w-0 max-w-full items-center gap-1 text-xs text-gray-500">
               <AiOutlineEnvironment className="w-3.5 h-3.5 shrink-0 text-gray-400" />
-              <span className="truncate max-w-55">
+              <span className="truncate max-w-full sm:max-w-55">
                 {[t.city, t.state, t.country].filter(Boolean).join(", ") || "Location not specified"}
               </span>
             </span>
@@ -362,13 +404,13 @@ function TeacherListItem({
           )}
         </div>
 
-        {/* CTAs — stacked on the right */}
-        <div className="flex flex-col items-end gap-2 w-32 shrink-0">
+        {/* Actions below the details on mobile, stacked on the right on desktop. */}
+        <div className="col-span-2 flex items-center gap-2 sm:w-32 sm:shrink-0 sm:flex-col sm:items-end">
           <button
             onClick={onToggleLike}
             disabled={liking}
             aria-label={t.isLiked ? "Remove from saved tutors" : "Save tutor"}
-            className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
+            className="h-10 w-10 shrink-0 rounded-full sm:h-8 sm:w-8 bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:border-red-200 hover:text-red-500 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
           >
             {t.isLiked ? (
               <BsHeartFill className="w-3.5 h-3.5 text-red-500 animate-heart-pop" />
@@ -378,7 +420,7 @@ function TeacherListItem({
           </button>
           <button
             onClick={onContact}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
+            className="flex min-h-10 flex-1 items-center justify-center gap-1.5 px-3 py-1.5 sm:min-h-0 sm:w-full sm:flex-none text-xs font-semibold rounded-lg text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
             style={{ background: ORANGE }}
           >
             <AiOutlineMessage className="w-3.5 h-3.5" />
@@ -386,7 +428,7 @@ function TeacherListItem({
           </button>
           <Link
             href={`/teacher/${t.id}`}
-            className="w-full text-center px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+            className="inline-flex min-h-10 flex-1 items-center justify-center text-center px-3 py-1.5 sm:min-h-0 sm:w-full sm:flex-none text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
           >
             View Profile
           </Link>
@@ -420,6 +462,8 @@ export default function StudentHome({
   const [likingId, setLikingId] = useState<number | null>(null);
   const [likeError, setLikeError] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const mobileFiltersId = useId();
+  const mobileFiltersRef = useRef<HTMLDivElement>(null);
   const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
   const [myProfile, setMyProfile] = useState<StudentProfileRecord | null>(null);
   const [myProfileLoading, setMyProfileLoading] = useState(true);
@@ -528,6 +572,7 @@ export default function StudentHome({
       await mentorService.toggleLike(id, isLiked);
       const refreshed = await mentorService.getAllProfiles();
       setProfiles(refreshed);
+      notifySuccess(isLiked ? "Tutor removed from your saved list." : "Tutor saved.", "tutor-save");
     } catch {
       setLikeError("Couldn't update like. Please try again.");
     } finally {
@@ -535,6 +580,46 @@ export default function StudentHome({
     }
 
   }
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    const drawer = mobileFiltersRef.current;
+    document.body.style.overflow = "hidden";
+    drawer?.querySelector<HTMLButtonElement>("button")?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileFiltersOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !drawer) return;
+      const controls = Array.from(drawer.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex="0"]',
+      )).filter((control) => control.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    }
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobileFiltersOpen(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      desktop.removeEventListener("change", closeOnDesktop);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [mobileFiltersOpen]);
 
   function clearFilters() {
     setCourseFilters([]);
@@ -633,52 +718,19 @@ export default function StudentHome({
 
       {/* City */}
       <FilterSection title="City">
-        <select
+        <Select
+          aria-label="Filter tutors by city"
           value={cityFilter}
-          onChange={(e) => setCityFilter(e.target.value)}
-          className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none bg-white"
-        >
-          <option value="all">All cities</option>
-          {cityOptions.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          onValueChange={setCityFilter}
+          options={[{ value: "all", label: "All cities" }, ...cityOptions.map((city) => ({ value: city, label: city }))]}
+          compact
+          className="w-full"
+        />
       </FilterSection>
 
       {/* Experience */}
       <FilterSection title="Experience">
-        <div className="flex flex-col gap-1">
-          {EXP_BUCKETS.map((b) => (
-            <label
-              key={b.label}
-              className="flex items-center gap-2.5 cursor-pointer py-1"
-              onClick={() => setExpBucket(expBucket === b.label ? "" : b.label)}
-            >
-              <div
-                className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                style={
-                  expBucket === b.label
-                    ? { borderColor: ORANGE }
-                    : { borderColor: "#D1D5DB" }
-                }
-              >
-                {expBucket === b.label && (
-                  <div className="w-2 h-2 rounded-full" style={{ background: ORANGE }} />
-                )}
-              </div>
-              <span className="text-sm text-gray-600">{b.label}</span>
-            </label>
-          ))}
-          {expBucket && (
-            <button
-              onClick={() => setExpBucket("")}
-              className="text-xs mt-1 text-left hover:underline"
-              style={{ color: ORANGE }}
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <ExperienceFilter value={expBucket} onChange={setExpBucket} />
       </FilterSection>
 
       {/* Verified */}
@@ -787,17 +839,14 @@ export default function StudentHome({
           {/* City */}
           <div className="hidden shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs text-gray-600 transition-colors hover:border-orange-300 sm:flex sm:px-3 sm:text-sm">
             <AiOutlineEnvironment className="w-4 h-4 text-sky-700 shrink-0" />
-            <select
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
+            <Select
               aria-label="Filter tutors by city"
-              className="max-w-[86px] sm:max-w-[130px] bg-transparent outline-none cursor-pointer"
-            >
-              <option value="all">All cities</option>
-              {cityOptions.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+              value={cityFilter}
+              onValueChange={setCityFilter}
+              options={[{ value: "all", label: "All cities" }, ...cityOptions.map((city) => ({ value: city, label: city }))]}
+              variant="plain"
+              className="max-w-[110px] sm:max-w-[150px]"
+            />
           </div>
 
           {/* Right */}
@@ -892,11 +941,14 @@ export default function StudentHome({
                 {courseFilters.length > 0 ? ` · ${courseFilters.join(", ")}` : ""}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
               {/* Mobile filter button */}
               <button
+                type="button"
+                aria-expanded={mobileFiltersOpen}
+                aria-controls={mobileFiltersId}
                 onClick={() => setMobileFiltersOpen((o) => !o)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 lg:hidden transition-all"
+                className="flex w-fit items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 lg:hidden transition-all"
               >
                 <AiOutlineFilter className="w-4 h-4" />
                 Filters
@@ -911,22 +963,25 @@ export default function StudentHome({
               </button>
 
               {/* Sort */}
-              <div className="flex items-center gap-2">
+              <div className="col-span-2 row-start-2 flex min-w-0 items-center gap-2">
                 <span className="text-sm text-gray-500 hidden sm:block">Sort by:</span>
-                <select
+                <Select
+                  aria-label="Sort tutors"
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none bg-white hover:border-orange-300 transition-colors cursor-pointer"
-                >
-                  <option value="relevant">Most Relevant</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="exp">Most Experienced</option>
-                  <option value="name">Name (A–Z)</option>
-                </select>
+                  onValueChange={setSortBy}
+                  options={[
+                    { value: "relevant", label: "Most Relevant" },
+                    { value: "rating", label: "Highest Rated" },
+                    { value: "exp", label: "Most Experienced" },
+                    { value: "name", label: "Name (A–Z)" },
+                  ]}
+                  compact
+                  className="w-full sm:w-auto"
+                />
               </div>
 
               {/* View toggle */}
-              <div className="flex items-center gap-1 border border-gray-200 rounded-xl p-1 bg-white">
+              <div className="col-start-2 row-start-1 flex shrink-0 items-center gap-1 border border-gray-200 rounded-xl p-1 bg-white">
                 <button
                   onClick={() => setViewMode("list")}
                   aria-label="List view"
@@ -971,10 +1026,17 @@ export default function StudentHome({
               className="absolute inset-0 bg-black/40 animate-fade-in"
               onClick={() => setMobileFiltersOpen(false)}
             />
-            <div className="absolute right-0 top-0 bottom-0 w-72 bg-white overflow-y-auto p-5 shadow-xl animate-slide-in-right">
+            <div
+              ref={mobileFiltersRef}
+              id={mobileFiltersId}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Tutor filters"
+              className="absolute right-0 top-0 bottom-0 w-72 bg-white overflow-y-auto p-5 shadow-xl animate-slide-in-right"
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-base font-semibold" style={{ color: NAVY }}>Filters</span>
-                <button onClick={() => setMobileFiltersOpen(false)}>
+                <button type="button" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)}>
                   <AiOutlineClose className="w-5 h-5 text-gray-500" />
                 </button>
               </div>

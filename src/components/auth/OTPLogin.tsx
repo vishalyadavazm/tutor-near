@@ -1,5 +1,7 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
 /**
  * Uses the shared navy and orange TutorNear palette.
  */
@@ -48,6 +50,7 @@ export default function OTPLogin() {
 
     try {
       await AuthService.sendEmailOTP(data.email);
+      notifySuccess("Verification code sent to your email.", "auth-login-otp");
 
       setSentEmail(data.email);
       setStep("verify");
@@ -77,6 +80,7 @@ export default function OTPLogin() {
 
     try {
       await AuthService.sendEmailOTP(sentEmail);
+      notifySuccess("A new verification code has been sent.", "auth-login-otp");
 
       setTimer(OTP_RESEND_SECONDS);
     } catch (error) {
@@ -121,6 +125,7 @@ export default function OTPLogin() {
       const roleFromApi = extractRole(res.data);
       if (roleFromApi) saveRole(roleFromApi);
 
+      notifySuccess("Welcome back! You’re signed in.", "auth-login");
       redirectByRole(router);
     } catch (error) {
       if (axios.isAxiosError(error)) {

@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { queueNotification } from "@/lib/notifications";
 import axios from "axios";
 import { API } from "@/constants/api";
 import { saveToken, saveAuthenticatedSession, clearAuth } from "@/utils/auth";
@@ -56,8 +57,16 @@ class AuthService {
   }
 
   async login(data: LoginRequest): Promise<LoginResponse> {
+    return this.passwordLogin(API.LOGIN, data);
+  }
+
+  async adminLogin(data: Pick<LoginRequest, "email" | "password">): Promise<LoginResponse> {
+    return this.passwordLogin(API.ADMIN_LOGIN, data);
+  }
+
+  private async passwordLogin(endpoint: string, data: LoginRequest): Promise<LoginResponse> {
     try {
-      const res = await api.post<LoginResponse>(API.LOGIN, data);
+      const res = await api.post<LoginResponse>(endpoint, data);
 
       const token = this.extractToken(res.data);
 
@@ -182,6 +191,7 @@ class AuthService {
 
   confirmLogout() {
     clearAuth();
+    queueNotification("success", "You’ve been logged out successfully.", "auth-logout");
     window.location.replace("/login");
   }
   sendEmailOTP(email: string) {

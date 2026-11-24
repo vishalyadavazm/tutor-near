@@ -1,5 +1,9 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
+import Select from "@/components/ui/Select";
+
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -462,6 +466,7 @@ export default function TeacherProfile() {
       } else {
         await mentorService.createProfile(payload);
       }
+      notifySuccess("Profile saved successfully.", "profile-save");
       router.push("/dashboard");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Unable to save profile.");
@@ -683,17 +688,14 @@ export default function TeacherProfile() {
             <SectionCard icon={<AiOutlineCalendar className="w-4 h-4" />} title="Personal & Experience Details">
               <div className="grid grid-cols-3 gap-4">
                 <Field label="Gender" required error={genderError}>
-                  <select
-                    className={inputCls}
-                    style={fieldStyle(!!genderError)}
+                  <Select
+                    aria-label="Gender"
                     value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                  >
-                    <option value="">Select gender</option>
-                    {GENDERS.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
+                    onValueChange={setGender}
+                    options={[{ value: "", label: "Select gender" }, ...GENDERS.map((gender) => ({ value: gender, label: gender }))]}
+                    invalid={!!genderError}
+                    required
+                  />
                 </Field>
                 <Field label="Date of Birth" required error={dobError}>
                   <input
@@ -844,16 +846,12 @@ export default function TeacherProfile() {
             <SectionCard icon={<BsShieldCheck className="w-4 h-4" />} title="Identity Verification" optional>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="ID Document Type">
-                  <select
-                    className={inputCls}
+                  <Select
+                    aria-label="ID Document Type"
                     value={identityDocId ?? ""}
-                    onChange={(e) => setIdentityDocId(e.target.value ? Number(e.target.value) : undefined)}
-                  >
-                    <option value="">Select document type</option>
-                    {documentNames.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
+                    onValueChange={(value) => setIdentityDocId(value ? Number(value) : undefined)}
+                    options={[{ value: "", label: "Select document type" }, ...documentNames.map((document) => ({ value: document.id, label: document.name }))]}
+                  />
                 </Field>
                 <Field label="Upload ID Proof" hint="JPG, PNG or PDF">
                   <div className="flex items-center gap-2">

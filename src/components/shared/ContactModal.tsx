@@ -1,5 +1,9 @@
 "use client";
 
+import { notifySuccess } from "@/lib/notifications";
+
+import Select from "@/components/ui/Select";
+
 import { useState, useEffect, useRef } from "react";
 import { AiOutlineClose, AiOutlinePhone, AiOutlineUser, AiOutlineMail } from "react-icons/ai";
 import { BsShieldCheck, BsCheckCircleFill } from "react-icons/bs";
@@ -227,7 +231,7 @@ export default function ContactModal({ teacher, onClose }: Props) {
               {teacher.name} will get back to you when available.
             </p>
             <button
-              onClick={onClose}
+              onClick={() => { notifySuccess("Enquiry sent successfully.", "enquiry-send"); onClose(); }}
               className="mt-6 px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
               style={{ background: ORANGE }}
             >
@@ -289,24 +293,24 @@ export default function ContactModal({ teacher, onClose }: Props) {
               {/* Subject + Grade — side by side */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Subject" required>
-                  <select
+                  <Select
+                    aria-label="Subject"
                     value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className={selectCls(false)}
-                  >
-                    {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
-                  </select>
+                    onValueChange={setSubject}
+                    options={SUBJECTS.map((subject) => ({ value: subject, label: subject }))}
+                    required
+                  />
                 </Field>
 
                 <Field label="Grade / Class" required error={errors.grade}>
-                  <select
+                  <Select
+                    aria-label="Grade / Class"
                     value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className={selectCls(!!errors.grade)}
-                  >
-                    <option value="">Select grade</option>
-                    {GRADES.map((g) => <option key={g}>{g}</option>)}
-                  </select>
+                    onValueChange={setGrade}
+                    options={[{ value: "", label: "Select grade" }, ...GRADES.map((grade) => ({ value: grade, label: grade }))]}
+                    invalid={!!errors.grade}
+                    required
+                  />
                 </Field>
               </div>
 
@@ -379,14 +383,6 @@ function fieldCls(hasError: boolean) {
   return `w-full pl-9 pr-3 py-2.5 text-sm text-gray-900 border rounded-xl outline-none placeholder:text-gray-400 transition-all ${
     hasError
       ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-      : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-  }`;
-}
-
-function selectCls(hasError: boolean) {
-  return `w-full px-3 py-2.5 text-sm text-gray-900 border rounded-xl outline-none cursor-pointer transition-all bg-white ${
-    hasError
-      ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
       : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
   }`;
 }

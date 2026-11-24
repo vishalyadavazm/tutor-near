@@ -1,5 +1,7 @@
 import axios from "axios";
-import { clearAuth } from "@/utils/auth";
+import { clearAuth, getIsAuthenticatedSnapshot } from "@/utils/auth";
+import { notifyError, queueNotification } from "@/lib/notifications";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -30,13 +32,37 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Unauthorized
-    if (typeof window !== "undefined" && error.response?.status === 401) {
-      clearAuth();
+    if (typeof window !== "undefined" && !axios.isCancel(error)) {
+      const backendMessage = getApiErrorMessage(error.response?.data);
+      const fallbackMessage =
+        error.code === "ECONNABORTED" || error.code === "ETIMEDOUT"
+          ? "The request timed out. Please try again."
+          : !error.response
+            ? "Unable to connect. Please check your connection and try again."
+            : "The request failed. Please try again.";
+      const message = backendMessage || fallbackMessage;
+      let redirecting = false;
 
-      // Prevent redirect loop
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (error.response?.status === 401) {
+        const hadSession = getIsAuthenticatedSnapshot();
+        clearAuth();
+
+        // Keep administrative sessions on their own sign-in page.
+        const pathname = window.location.pathname.replace(/\/+$/, "");
+        const loginPath = pathname === "/admin" || pathname.startsWith("/admin/") ? "/admin" : "/login";
+        if (pathname !== loginPath) {
+          const redirectMessage = backendMessage || (hadSession
+            ? "Your session has expired. Please sign in again."
+            : fallbackMessage);
+          queueNotification("error", redirectMessage, "api-auth-error");
+          redirecting = true;
+          window.location.href = loginPath;
+        }
+      }
+
+      if (!redirecting) {
+        // Repeated failures with the same message update one toast instead of stacking.
+        notifyError(message, "api-error:" + message);
       }
     }
 

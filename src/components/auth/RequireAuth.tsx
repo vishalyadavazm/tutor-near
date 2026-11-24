@@ -12,9 +12,10 @@ import {
 interface RequireAuthProps {
   children: ReactNode;
   allowedRoles?: string[];
+  loginPath?: string;
 }
 
-export default function RequireAuth({ children, allowedRoles }: RequireAuthProps) {
+export default function RequireAuth({ children, allowedRoles, loginPath = "/login" }: RequireAuthProps) {
   const router = useRouter();
   const isAuthenticated = useSyncExternalStore(
     subscribeToRoleChanges,
@@ -25,8 +26,9 @@ export default function RequireAuth({ children, allowedRoles }: RequireAuthProps
   const hasAllowedRole = !allowedRoles || (role !== null && allowedRoles.includes(role));
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace("/login");
-  }, [isAuthenticated, router]);
+    // Read the current session before redirecting during initial hydration.
+    if (!getIsAuthenticatedSnapshot()) router.replace(loginPath);
+  }, [isAuthenticated, loginPath, router]);
 
   if (!isAuthenticated) {
     return (

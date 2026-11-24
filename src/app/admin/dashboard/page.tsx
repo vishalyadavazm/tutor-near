@@ -1,5 +1,6 @@
 import Link from "next/link";
 import RequireAuth from "@/components/auth/RequireAuth";
+import AdminStaffLink from "@/components/admin/AdminStaffLink";
 import {
   AiOutlineBook,
   AiOutlineCheckCircle,
@@ -36,6 +37,7 @@ function AdminDashboardPage() {
         </p>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <AdminStaffLink />
           <Link
             href="/admin/enquiries"
             className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md"
@@ -121,7 +123,7 @@ function AdminDashboardPage() {
 
 export default function AdminPage() {
   return (
-    <RequireAuth allowedRoles={["admin", "staff"]}>
+    <RequireAuth allowedRoles={["admin", "staff"]} loginPath="/admin">
       <AdminDashboardPage />
     </RequireAuth>
   );
