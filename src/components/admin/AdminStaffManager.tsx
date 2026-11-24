@@ -2,7 +2,6 @@
 
 import { notifySuccess } from "@/lib/notifications";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { AiOutlinePlus, AiOutlineReload, AiOutlineTeam } from "react-icons/ai";
@@ -224,21 +223,7 @@ export default function AdminStaffManager() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F7FB] text-gray-900">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-          <Link
-            href="/admin/dashboard"
-            className="text-lg font-extrabold tracking-tight text-brand-navy"
-          >
-            Tutor<span className="text-brand-orange">Near</span>
-            <span className="ml-2 text-sm font-medium text-gray-500">Admin</span>
-          </Link>
-          <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-            Staff management
-          </span>
-        </div>
-      </header>
+    <main className="bg-[#F5F7FB] text-gray-900">
       <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 lg:px-8">
         <BackLink href="/admin/dashboard">Admin dashboard</BackLink>
       </div>

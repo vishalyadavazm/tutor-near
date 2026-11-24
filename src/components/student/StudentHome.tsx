@@ -136,8 +136,7 @@ function ExperienceFilter({ value, onChange }: { value: string; onChange: (value
             name={groupName}
             value={bucket.label}
             checked={value === bucket.label}
-            onChange={() => { if (value !== bucket.label) onChange(bucket.label); }}
-            onClick={() => { if (value === bucket.label) onChange(""); }}
+            onChange={() => onChange(bucket.label)}
             className="peer sr-only"
           />
           <span
@@ -151,7 +150,16 @@ function ExperienceFilter({ value, onChange }: { value: string; onChange: (value
         </label>
       ))}
       {value && (
-        <button type="button" onClick={() => onChange("")} className="text-xs mt-1 text-left hover:underline" style={{ color: ORANGE }}>
+        <button
+          type="button"
+          aria-label="Clear experience filter"
+          onClick={(event) => {
+            onChange("");
+            event.currentTarget.closest("fieldset")?.querySelector<HTMLInputElement>("input")?.focus();
+          }}
+          className="mt-1 w-fit rounded text-left text-xs hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8621A]"
+          style={{ color: ORANGE }}
+        >
           Clear
         </button>
       )}
@@ -454,6 +462,7 @@ export default function StudentHome({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [searchText, setSearchText] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [cityFilter, setCityFilter] = useState("all");
   const [courseFilters, setCourseFilters] = useState<string[]>([]);
   const [expBucket, setExpBucket] = useState("");
@@ -626,6 +635,12 @@ export default function StudentHome({
     setExpBucket("");
     setCityFilter("all");
     setVerifiedOnly(false);
+  }
+
+  function clearSearchAndFilters() {
+    setSearchText("");
+    clearFilters();
+    searchInputRef.current?.focus();
   }
 
   const activeFilterCount =
@@ -823,14 +838,24 @@ export default function StudentHome({
           <div className="flex min-w-[96px] flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 transition-colors hover:border-orange-300 focus-within:border-orange-400 sm:min-w-0">
             <AiOutlineSearch className="w-4 h-4 text-gray-400 shrink-0" />
             <input
+              ref={searchInputRef}
               type="text"
+              aria-label="Search tutors"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search by subject, class, skill, or tutor name..."
               className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full"
             />
             {searchText && (
-              <button onClick={() => setSearchText("")} className="text-gray-400 hover:text-gray-600">
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => {
+                  setSearchText("");
+                  searchInputRef.current?.focus();
+                }}
+                className="rounded text-gray-400 hover:text-gray-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8621A]"
+              >
                 <AiOutlineClose className="w-3.5 h-3.5" />
               </button>
             )}
@@ -901,7 +926,7 @@ export default function StudentHome({
       <section aria-label="Job posts" className="mx-auto w-full max-w-[1400px] px-5 pt-4">
         {postsLoading || postsError || posts.length > 0 ? (
           postsLoading ? (
-            <div className="h-[220px] animate-shimmer rounded-2xl" />
+            <div className="h-[160px] animate-shimmer rounded-2xl" />
           ) : postsError ? (
             <div
               role="alert"
@@ -916,10 +941,10 @@ export default function StudentHome({
               </button>
             </div>
           ) : (
-            <JobPostSlider posts={sortedPosts} />
+            <JobPostSlider posts={sortedPosts} compact />
           )
         ) : (
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-500">
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-4 text-center text-sm text-gray-500">
             No job posts yet. Create the first one.
           </div>
         )}
@@ -1096,11 +1121,11 @@ export default function StudentHome({
                 Try adjusting your filters or search terms
               </div>
               <button
-                onClick={clearFilters}
+                onClick={clearSearchAndFilters}
                 className="mt-4 px-5 py-2 rounded-xl text-sm font-semibold text-white"
                 style={{ background: ORANGE }}
               >
-                Clear all filters
+                Clear search and filters
               </button>
             </div>
           ) : viewMode === "grid" ? (

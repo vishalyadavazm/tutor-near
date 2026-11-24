@@ -3,6 +3,7 @@
 import { notifySuccess } from "@/lib/notifications";
 
 import Select from "@/components/ui/Select";
+import DateOfBirthPicker from "@/components/ui/DateOfBirthPicker";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -155,6 +156,7 @@ export default function StudentProfile() {
   /* Basic identity (display only — not part of the student profile payload) */
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState("");
   const [firstName, setFirstName] = useState("Student");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("student@example.com");
@@ -262,6 +264,12 @@ export default function StudentProfile() {
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setPhotoError("Please choose a profile photo of 1 MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+    setPhotoError("");
     setPhotoFile(file);
     setPhotoUrl(URL.createObjectURL(file));
   }
@@ -449,8 +457,11 @@ export default function StudentProfile() {
                     {photoUrl ? "Change photo" : "Upload photo"}
                   </button>
                   <p className="text-xs text-gray-400 mt-1.5">
-                    JPG or PNG · Max 2 MB · Recommended 400×400
+                    JPG or PNG · Max 1 MB · Recommended 400×400
                   </p>
+                  {photoError && (
+                    <p role="alert" className="mt-1.5 text-xs text-red-500">{photoError}</p>
+                  )}
                 </div>
               </div>
 
@@ -501,12 +512,9 @@ export default function StudentProfile() {
                   />
                 </Field>
                 <Field label="Date of Birth">
-                  <input
-                    type="date"
-                    className={inputCls}
-                    style={inputFocusStyle}
+                  <DateOfBirthPicker
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    onValueChange={setDob}
                   />
                 </Field>
               </div>

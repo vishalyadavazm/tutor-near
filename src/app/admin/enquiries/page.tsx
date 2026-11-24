@@ -2,7 +2,6 @@
 
 import Select from "@/components/ui/Select";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import BackLink from "@/components/common/BackLink";
 import {
@@ -104,18 +103,7 @@ export default function AdminEnquiriesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F7FB] text-gray-900">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <Link href="/" className="text-lg font-extrabold tracking-tight" style={{ color: NAVY }}>
-            Tutor<span style={{ color: ORANGE }}>Near</span>
-            <span className="ml-2 text-sm font-medium text-gray-500">Admin</span>
-          </Link>
-          <span className="ml-auto rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-            Enquiry management
-          </span>
-        </div>
-      </header>
+    <main className="bg-[#F5F7FB] text-gray-900">
 
       <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 lg:px-8">
         <BackLink href="/admin/dashboard">Admin dashboard</BackLink>

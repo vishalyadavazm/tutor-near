@@ -3,6 +3,7 @@
 import { notifySuccess } from "@/lib/notifications";
 
 import Select from "@/components/ui/Select";
+import DateOfBirthPicker from "@/components/ui/DateOfBirthPicker";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -254,6 +255,7 @@ export default function TeacherProfile() {
   /* Basic identity (display only — not part of the mentor profile payload) */
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState("");
   const [bannerUrl, setBannerUrl] = useState<string>("");
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [firstName, setFirstName] = useState("Teacher");
@@ -400,6 +402,12 @@ export default function TeacherProfile() {
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setPhotoError("Please choose a profile photo of 1 MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+    setPhotoError("");
     setPhotoFile(file);
     setPhotoUrl(URL.createObjectURL(file));
   }
@@ -637,8 +645,11 @@ export default function TeacherProfile() {
                     {photoUrl ? "Change photo" : "Upload photo"}
                   </button>
                   <p className="text-xs text-gray-400 mt-1.5">
-                    JPG or PNG · Max 2 MB · Recommended 400×400
+                    JPG or PNG · Max 1 MB · Recommended 400×400
                   </p>
+                  {photoError && (
+                    <p role="alert" className="mt-1.5 text-xs text-red-500">{photoError}</p>
+                  )}
                   {hasExistingPhoto && !photoFile ? (
                     <p className="text-xs text-gray-400 mt-0.5">
                       This is your current photo. Choose a new file to replace it.
@@ -698,12 +709,11 @@ export default function TeacherProfile() {
                   />
                 </Field>
                 <Field label="Date of Birth" required error={dobError}>
-                  <input
-                    type="date"
-                    className={inputCls}
-                    style={fieldStyle(!!dobError)}
+                  <DateOfBirthPicker
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    onValueChange={setDob}
+                    invalid={!!dobError}
+                    required
                   />
                 </Field>
                 <Field label="Years of Experience" required error={experienceError}>

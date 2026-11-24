@@ -1,3 +1,5 @@
+import { ACCOUNT_PROFILE_KEY } from "@/utils/account";
+
 export const saveToken = (token: string) => {
     localStorage.setItem("authToken", token);
     if (typeof window !== "undefined") window.dispatchEvent(new Event("auth-state-change"));
@@ -44,6 +46,7 @@ export const getIsAuthenticatedSnapshot = () =>
     (!!getToken() || localStorage.getItem("authSession") === "true");
 
 export const clearAuth = () => {
+    localStorage.removeItem(ACCOUNT_PROFILE_KEY);
     localStorage.removeItem("authToken");
     localStorage.removeItem("authSession");
     localStorage.removeItem("userRole");

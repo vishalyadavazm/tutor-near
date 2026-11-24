@@ -2,7 +2,8 @@ import api from "@/lib/axios";
 import { queueNotification } from "@/lib/notifications";
 import axios from "axios";
 import { API } from "@/constants/api";
-import { saveToken, saveAuthenticatedSession, clearAuth } from "@/utils/auth";
+import { saveToken, saveAuthenticatedSession, clearAuth, getRole } from "@/utils/auth";
+import { saveAccountProfile } from "@/utils/account";
 
 export interface LoginRequest {
   email: string;
@@ -74,6 +75,7 @@ class AuthService {
         saveToken(token);
       }
 
+      saveAccountProfile(res.data, data.email);
       saveAuthenticatedSession();
       return res.data;
     } catch (error) {
@@ -190,9 +192,12 @@ class AuthService {
   }
 
   confirmLogout() {
+    const role = getRole();
+    const isAdministration = role === "admin" || role === "staff" ||
+      /^\/admin(?:\/|$)/.test(window.location.pathname);
     clearAuth();
     queueNotification("success", "You’ve been logged out successfully.", "auth-logout");
-    window.location.replace("/login");
+    window.location.replace(isAdministration ? "/admin" : "/login");
   }
   sendEmailOTP(email: string) {
     return api.post(API.EMAIL_SEND_OTP, {

@@ -14,18 +14,7 @@ const ORANGE = "#E8621A";
 
 function AdminDashboardPage() {
   return (
-    <main className="min-h-screen bg-[#F5F7FB] text-gray-900">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-lg font-extrabold tracking-tight" style={{ color: NAVY }}>
-            Tutor<span style={{ color: ORANGE }}>Near</span>
-            <span className="ml-2 text-sm font-medium text-gray-500">Admin</span>
-          </Link>
-          <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-            Administration
-          </span>
-        </div>
-      </header>
+    <main className="bg-[#F5F7FB] text-gray-900">
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <p className="text-sm font-semibold" style={{ color: ORANGE }}>ADMINISTRATION</p>
