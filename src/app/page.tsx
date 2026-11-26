@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AuthService from "@/services/auth.service";
 import {
   AiOutlineSearch,
@@ -190,6 +191,7 @@ function FaqItem({ q, a, isOpen, onClick }: { q: string; a: string; isOpen: bool
 
 /* ─── Main Page ───────────────────────────────────── */
 export default function HomeGuestPage() {
+  const router = useRouter();
   const [subject, setSubject] = useState("");
   const [location, setLocation] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -210,11 +212,10 @@ export default function HomeGuestPage() {
       setTeachersLoading(true);
       setTeachersError(false);
       try {
-        const directory = await mentorService.getAllProfiles({ page: 1, perPage: 8 });
+        const directory = await mentorService.getAllProfiles({ page: 1, perPage: 8, sort: "-total_rating,id" });
         const loadedTeachers = directory
           .map(toDisplayTeacherFromDirectory)
-          .filter((teacher): teacher is DisplayTeacher => teacher !== null)
-          .sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+          .filter((teacher): teacher is DisplayTeacher => teacher !== null);
         if (!cancelled) setTeachers(loadedTeachers);
       } catch {
         if (!cancelled) setTeachersError(true);
@@ -324,21 +325,31 @@ export default function HomeGuestPage() {
           Perfect Tutor
         </h1>
 
-        <div className="bg-white rounded-full border border-gray-200 flex items-stretch max-w-2xl mx-auto shadow-sm overflow-hidden animate-fade-in-up" style={{ animationDelay: "180ms" }}>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const params = new URLSearchParams();
+            if (subject.trim()) params.set("search", subject.trim());
+            if (location.trim()) params.set("city", location.trim());
+            router.push(`/student?${params.toString()}`);
+          }}
+          className="bg-white rounded-full border border-gray-200 flex items-stretch max-w-2xl mx-auto shadow-sm overflow-hidden animate-fade-in-up"
+          style={{ animationDelay: "180ms" }}
+        >
           <div className="flex items-center gap-2 flex-1 px-5 py-3 border-r border-gray-100">
             <AiOutlineBook className="w-4 h-4 text-gray-400 shrink-0" />
-            <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)}
-              placeholder="Subject (e.g. Physics)" className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full" />
+            <input type="search" aria-label="Search courses or classes" value={subject} onChange={(e) => setSubject(e.target.value)}
+              placeholder="Course or class (e.g. Physics)" className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full" />
           </div>
           <div className="flex items-center gap-2 flex-1 px-5 py-3">
             <AiOutlineEnvironment className="w-4 h-4 text-gray-400 shrink-0" />
-            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-              placeholder="Location or Online" className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full" />
+            <input type="search" aria-label="Search tutors by city" value={location} onChange={(e) => setLocation(e.target.value)}
+              placeholder="City (e.g. Delhi)" className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full" />
           </div>
-          <button className="px-7 text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0" style={{ background: ORANGE }}>
+          <button type="submit" className="px-7 text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0" style={{ background: ORANGE }}>
             Search
           </button>
-        </div>
+        </form>
       </section>
 
       {/* ── Trending searches ── */}
@@ -346,14 +357,15 @@ export default function HomeGuestPage() {
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-2.5 flex-wrap">
           <span className="text-xs font-semibold text-gray-400 mr-1">Trending:</span>
           {TRENDING_SEARCHES.map((s, index) => (
-            <span
+            <Link
               key={s}
+              href={`/student?search=${encodeURIComponent(s)}`}
               className="text-xs font-medium px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 cursor-pointer
                 hover:border-[#E8621A] hover:text-[#E8621A] hover:-translate-y-0.5 transition-all animate-fade-in-up"
               style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
             >
               {s}
-            </span>
+            </Link>
           ))}
         </div>
       </section>

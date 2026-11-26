@@ -1,6 +1,7 @@
 import api from "@/lib/axios";
 import axios from "axios";
 import { API } from "@/constants/api";
+import type { MentorDirectoryParams } from "@/lib/mentor-directory";
 
 export interface CourseOption {
   id: number;
@@ -19,6 +20,10 @@ export interface DocumentNameOption {
 
 interface ListResponse<T> {
   data: T[];
+}
+
+interface PaginatedListResponse<T> extends ListResponse<T> {
+  info: { page: number; per_page: number; more_records: boolean };
 }
 
 export interface MentorProfileUserRef {
@@ -190,6 +195,30 @@ class MentorService {
     return res.data.data;
   }
 
+  async getDirectoryCourses(signal?: AbortSignal): Promise<CourseOption[]> {
+    const courses: CourseOption[] = [];
+    let page = 1;
+    let moreRecords = true;
+    while (moreRecords) {
+      const res = await api.get<PaginatedListResponse<CourseOption>>(API.COMMON_COURSES, {
+        params: { page, per_page: 200, sort: "name,id" },
+        signal,
+      });
+      courses.push(...res.data.data);
+      moreRecords = res.data.info.more_records && res.data.data.length > 0;
+      page += 1;
+    }
+    return courses;
+  }
+
+  async getDirectoryPage(params: MentorDirectoryParams, signal?: AbortSignal) {
+    const res = await api.get<PaginatedListResponse<MentorDirectoryEntry>>(API.MENTOR_ALL_PROFILES, {
+      params,
+      signal,
+    });
+    return { profiles: res.data.data, moreRecords: res.data.info.more_records };
+  }
+
   async getProfiles(): Promise<MentorProfileRecord[]> {
     const res = await api.get<{ data: MentorProfileRecord[] | { id: null; user: MentorProfileBasicUser } }>(
       API.MENTOR_PROFILE,
@@ -221,10 +250,10 @@ class MentorService {
     return this.myProfileRequest;
   }
 
-  async getAllProfiles(options?: { page?: number; perPage?: number }): Promise<MentorDirectoryEntry[]> {
+  async getAllProfiles(options?: { page?: number; perPage?: number; sort?: string }): Promise<MentorDirectoryEntry[]> {
     const res = await api.get<ListResponse<MentorDirectoryEntry>>(API.MENTOR_ALL_PROFILES, {
       params: options
-        ? { page: options.page ?? 1, per_page: options.perPage ?? 6 }
+        ? { page: options.page ?? 1, per_page: options.perPage ?? 6, sort: options.sort }
         : undefined,
     });
     return res.data.data;

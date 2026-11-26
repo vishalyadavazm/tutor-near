@@ -29,7 +29,14 @@ import { MdOutlineWork } from "react-icons/md";
 import AuthService from "@/services/auth.service";
 import ContactModal from "@/components/shared/ContactModal";
 import JobPostSlider from "@/components/student/JobPostSlider";
-import mentorService, { CourseOption, MentorDirectoryEntry } from "@/services/mentor.service";
+import mentorService, { CourseOption } from "@/services/mentor.service";
+import useMentorDirectory from "@/components/student/useMentorDirectory";
+import {
+  MENTOR_EXPERIENCE_BUCKETS,
+  MENTOR_SEARCH_FIELDS,
+  type MentorSearchField,
+  type MentorSort,
+} from "@/lib/mentor-directory";
 import studentService, { StudentPost, StudentProfileRecord } from "@/services/student.service";
 import {
   DisplayTeacher,
@@ -56,13 +63,6 @@ function computeStudentCompletion(p: StudentProfileRecord | null): number {
   ];
   return Math.round((items.filter(Boolean).length / items.length) * 100);
 }
-
-const EXP_BUCKETS = [
-  { label: "0–2 years", min: 0, max: 2 },
-  { label: "3–5 years", min: 3, max: 5 },
-  { label: "6–10 years", min: 6, max: 10 },
-  { label: "10+ years", min: 11, max: 99 },
-];
 
 /* ─── Sub-components ────────────────────────────── */
 
@@ -129,7 +129,7 @@ function ExperienceFilter({ value, onChange }: { value: string; onChange: (value
   return (
     <fieldset className="flex flex-col gap-1">
       <legend className="sr-only">Tutor experience</legend>
-      {EXP_BUCKETS.map((bucket) => (
+      {MENTOR_EXPERIENCE_BUCKETS.map((bucket) => (
         <label key={bucket.label} className="flex items-center gap-2.5 cursor-pointer py-1">
           <input
             type="radio"
@@ -449,25 +449,40 @@ function TeacherListItem({
 /* ─── Main component ─────────────────────────────── */
 export default function StudentHome({
   showTeacherDashboardBack = false,
+  initialSearch = "",
+  initialCity = "",
 }: {
   showTeacherDashboardBack?: boolean;
+  initialSearch?: string;
+  initialCity?: string;
 }) {
-  const [profiles, setProfiles] = useState<MentorDirectoryEntry[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [coursesRetryCount, setCoursesRetryCount] = useState(0);
   const [posts, setPosts] = useState<StudentPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [postsRetryCount, setPostsRetryCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState(initialSearch);
+  const [searchField, setSearchField] = useState<MentorSearchField>("course");
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [cityFilter, setCityFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState(initialCity);
   const [courseFilters, setCourseFilters] = useState<string[]>([]);
   const [expBucket, setExpBucket] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sortBy, setSortBy] = useState("relevant");
+  const [sortBy, setSortBy] = useState<MentorSort>("relevant");
+  const {
+    profiles, loading, error: loadError, moreRecords, page, setPage, refresh,
+  } = useMentorDirectory({
+    searchField,
+    searchText,
+    city: cityFilter,
+    courses: courseFilters,
+    experience: expBucket,
+    verifiedOnly,
+    sort: sortBy,
+  });
   const [likingId, setLikingId] = useState<number | null>(null);
   const [likeError, setLikeError] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -486,28 +501,21 @@ export default function StudentHome({
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
+    const controller = new AbortController();
     (async () => {
+      setCoursesLoading(true);
+      setCoursesError(null);
       try {
-        const [profilesRes, coursesRes] = await Promise.all([
-          mentorService.getAllProfiles(),
-          mentorService.getCourses(),
-        ]);
-        if (cancelled) return;
-        setProfiles(profilesRes);
-        setCourses(coursesRes);
+        const result = await mentorService.getDirectoryCourses(controller.signal);
+        if (!controller.signal.aborted) setCourses(result);
       } catch {
-        if (!cancelled) setLoadError("Couldn't load tutors. Please refresh the page.");
+        if (!controller.signal.aborted) setCoursesError("Couldn't load courses.");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setCoursesLoading(false);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return () => controller.abort();
+  }, [coursesRetryCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -549,14 +557,9 @@ export default function StudentHome({
     };
   }, []);
 
-  const teachers = useMemo(
+  const results = useMemo(
     () => profiles.map(toDisplayTeacherFromDirectory).filter((t): t is DisplayTeacher => t !== null),
     [profiles],
-  );
-
-  const cityOptions = useMemo(
-    () => Array.from(new Set(teachers.map((t) => t.city).filter(Boolean))).sort(),
-    [teachers],
   );
 
   const sortedPosts = useMemo(
@@ -579,8 +582,7 @@ export default function StudentHome({
     setLikeError(null);
     try {
       await mentorService.toggleLike(id, isLiked);
-      const refreshed = await mentorService.getAllProfiles();
-      setProfiles(refreshed);
+      refresh();
       notifySuccess(isLiked ? "Tutor removed from your saved list." : "Tutor saved.", "tutor-save");
     } catch {
       setLikeError("Couldn't update like. Please try again.");
@@ -633,7 +635,7 @@ export default function StudentHome({
   function clearFilters() {
     setCourseFilters([]);
     setExpBucket("");
-    setCityFilter("all");
+    setCityFilter("");
     setVerifiedOnly(false);
   }
 
@@ -646,46 +648,8 @@ export default function StudentHome({
   const activeFilterCount =
     courseFilters.length +
     (expBucket ? 1 : 0) +
-    (cityFilter !== "all" ? 1 : 0) +
+    (cityFilter.trim() ? 1 : 0) +
     (verifiedOnly ? 1 : 0);
-
-  const results = useMemo(() => {
-    const bucket = EXP_BUCKETS.find((b) => b.label === expBucket);
-    let list = teachers.filter((t) => {
-      if (
-        searchText &&
-        !t.name.toLowerCase().includes(searchText.toLowerCase()) &&
-        !t.expertise.toLowerCase().includes(searchText.toLowerCase()) &&
-        !t.about.toLowerCase().includes(searchText.toLowerCase()) &&
-        !t.courses.some((c) => c.toLowerCase().includes(searchText.toLowerCase()))
-      )
-        return false;
-      if (cityFilter !== "all" && t.city !== cityFilter) return false;
-      if (courseFilters.length > 0 && !t.courses.some((c) => courseFilters.includes(c)))
-        return false;
-      if (bucket) {
-        const years = t.experienceYears ?? -1;
-        if (years < bucket.min || years > bucket.max) return false;
-      }
-      if (verifiedOnly && !t.verified) return false;
-      return true;
-    });
-
-    switch (sortBy) {
-      case "rating":
-        list = [...list].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
-        break;
-      case "exp":
-        list = [...list].sort((a, b) => (b.experienceYears ?? 0) - (a.experienceYears ?? 0));
-        break;
-      case "name":
-        list = [...list].sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        break;
-    }
-    return list;
-  }, [teachers, searchText, cityFilter, courseFilters, expBucket, verifiedOnly, sortBy]);
 
   const filterPanel = (
     <div className="flex flex-col">
@@ -717,7 +681,15 @@ export default function StudentHome({
       {/* Course */}
       <FilterSection title="Courses">
         <div className="flex flex-col">
-          {courses.length === 0 && (
+          <p className="mb-2 text-xs text-gray-400">Match all selected courses</p>
+          {coursesLoading ? (
+            <p className="text-xs text-gray-400">Loading courses…</p>
+          ) : coursesError ? (
+            <div role="alert" className="text-xs text-red-600">
+              {coursesError}{" "}
+              <button type="button" className="underline" onClick={() => setCoursesRetryCount((value) => value + 1)}>Try again</button>
+            </div>
+          ) : courses.length === 0 && (
             <p className="text-xs text-gray-400">No courses available</p>
           )}
           {courses.map((c) => (
@@ -733,13 +705,13 @@ export default function StudentHome({
 
       {/* City */}
       <FilterSection title="City">
-        <Select
+        <input
+          type="search"
           aria-label="Filter tutors by city"
           value={cityFilter}
-          onValueChange={setCityFilter}
-          options={[{ value: "all", label: "All cities" }, ...cityOptions.map((city) => ({ value: city, label: city }))]}
-          compact
-          className="w-full"
+          onChange={(event) => setCityFilter(event.target.value)}
+          placeholder="Search any city..."
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400"
         />
       </FilterSection>
 
@@ -812,7 +784,7 @@ export default function StudentHome({
 
       {/* ── Topbar ── */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+        <div className="mx-auto flex min-h-16 max-w-[1400px] items-center gap-2 px-3 py-2 sm:h-16 sm:gap-4 sm:px-5 sm:py-0">
           {/* Logo */}
           <Link href="/student" className="flex items-center gap-2 shrink-0">
             <div
@@ -835,16 +807,24 @@ export default function StudentHome({
           </Link>
 
           {/* Inline search */}
-          <div className="flex min-w-[96px] flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 transition-colors hover:border-orange-300 focus-within:border-orange-400 sm:min-w-0">
+          <div className="flex min-w-[96px] flex-1 flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 transition-colors hover:border-orange-300 focus-within:border-orange-400 sm:min-w-0 sm:flex-nowrap">
+            <Select
+              aria-label="Tutor search field"
+              value={searchField}
+              onValueChange={(value) => setSearchField(value as MentorSearchField)}
+              options={MENTOR_SEARCH_FIELDS}
+              variant="plain"
+              className="w-full shrink-0 text-xs sm:w-40"
+            />
             <AiOutlineSearch className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               ref={searchInputRef}
-              type="text"
+              type="search"
               aria-label="Search tutors"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search by subject, class, skill, or tutor name..."
-              className="bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400 w-full"
+              placeholder={MENTOR_SEARCH_FIELDS.find((field) => field.value === searchField)?.placeholder}
+              className="min-w-0 flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
             />
             {searchText && (
               <button
@@ -864,13 +844,13 @@ export default function StudentHome({
           {/* City */}
           <div className="hidden shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs text-gray-600 transition-colors hover:border-orange-300 sm:flex sm:px-3 sm:text-sm">
             <AiOutlineEnvironment className="w-4 h-4 text-sky-700 shrink-0" />
-            <Select
-              aria-label="Filter tutors by city"
+            <input
+              type="search"
+              aria-label="Search tutors by city"
               value={cityFilter}
-              onValueChange={setCityFilter}
-              options={[{ value: "all", label: "All cities" }, ...cityOptions.map((city) => ({ value: city, label: city }))]}
-              variant="plain"
-              className="max-w-[110px] sm:max-w-[150px]"
+              onChange={(event) => setCityFilter(event.target.value)}
+              placeholder="Search city..."
+              className="w-24 bg-transparent text-sm outline-none sm:w-32"
             />
           </div>
 
@@ -958,11 +938,11 @@ export default function StudentHome({
               <h1 className="text-lg font-bold" style={{ color: NAVY }}>
                 Find your perfect tutor{" "}
                 <span className="text-sm font-normal text-gray-500">
-                  · {results.length} tutor{results.length === 1 ? "" : "s"}
+                  {loading ? "· Searching…" : `· ${results.length} tutor${results.length === 1 ? "" : "s"} on this page`}
                 </span>
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                {cityFilter !== "all" ? `In ${cityFilter}` : "All cities"}
+                {cityFilter.trim() ? `In ${cityFilter.trim()}` : "All cities"}
                 {courseFilters.length > 0 ? ` · ${courseFilters.join(", ")}` : ""}
               </p>
             </div>
@@ -993,9 +973,9 @@ export default function StudentHome({
                 <Select
                   aria-label="Sort tutors"
                   value={sortBy}
-                  onValueChange={setSortBy}
+                  onValueChange={(value) => setSortBy(value as MentorSort)}
                   options={[
-                    { value: "relevant", label: "Most Relevant" },
+                    { value: "relevant", label: "Default order" },
                     { value: "rating", label: "Highest Rated" },
                     { value: "exp", label: "Most Experienced" },
                     { value: "name", label: "Name (A–Z)" },
@@ -1071,14 +1051,14 @@ export default function StudentHome({
                 className="mt-4 w-full py-3 rounded-xl text-sm font-semibold text-white"
                 style={{ background: ORANGE }}
               >
-                Show {results.length} results
+                {loading ? "Searching…" : "View results"}
               </button>
             </div>
           </div>
         )}
 
         {/* ── Teacher listing ── */}
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
+        <div className="flex-1 min-w-0 flex flex-col gap-3" aria-busy={loading}>
           {likeError && (
             <div className="px-4 py-2.5 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
               {likeError}
@@ -1110,8 +1090,9 @@ export default function StudentHome({
               ))}
             </div>
           ) : loadError ? (
-            <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center text-sm text-red-500">
-              {loadError}
+            <div role="alert" className="bg-white border border-gray-100 rounded-2xl p-16 text-center text-sm text-red-500">
+              <p>{loadError}</p>
+              <button type="button" onClick={refresh} className="mt-3 font-semibold underline">Try again</button>
             </div>
           ) : results.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center">
@@ -1156,11 +1137,25 @@ export default function StudentHome({
             </div>
           )}
 
-          {/* Pagination hint */}
-          {!loading && !loadError && results.length > 0 && (
-            <div className="text-center py-4 text-sm text-gray-400">
-              Showing {results.length} of {teachers.length} teachers
-            </div>
+          {/* The backend provides a next-page flag, not a total result count. */}
+          {!loadError && (page > 1 || moreRecords || results.length > 0) && (
+            <nav aria-label="Tutor pages" className="flex items-center justify-between gap-3 py-4 text-sm">
+              <button
+                type="button"
+                onClick={() => setPage(page - 1)}
+                disabled={loading || page <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >Previous</button>
+              <span role="status" className="text-center text-gray-500">
+                Page {page}{!loading && ` · ${results.length} tutors`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(page + 1)}
+                disabled={loading || !moreRecords}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >Next</button>
+            </nav>
           )}
         </div>
       </div>
