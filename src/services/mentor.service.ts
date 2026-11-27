@@ -6,6 +6,7 @@ import type { MentorDirectoryParams } from "@/lib/mentor-directory";
 export interface CourseOption {
   id: number;
   name: string;
+  description?: string;
 }
 
 export interface QualificationOption {
@@ -193,6 +194,54 @@ class MentorService {
   async getCourses(): Promise<CourseOption[]> {
     const res = await api.get<ListResponse<CourseOption>>(API.COMMON_COURSES);
     return res.data.data;
+  }
+
+  async createCourse(payload: { name: string; description: string }): Promise<void> {
+    try {
+      await api.post(API.COMMON_COURSES, payload);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to create course."));
+    }
+  }
+
+  async createQualification(payload: { degree_name: string }): Promise<void> {
+    try {
+      await api.post(API.COMMON_QUALIFICATION, payload);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to create qualification."));
+    }
+  }
+
+  async updateCourse(id: number, payload: { name: string; description: string }): Promise<void> {
+    try {
+      await api.patch(`${API.COMMON_COURSES}/${id}`, payload);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to update course."));
+    }
+  }
+
+  async updateQualification(id: number, payload: { degree_name: string }): Promise<void> {
+    try {
+      await api.patch(`${API.COMMON_QUALIFICATION}/${id}`, payload);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to update qualification."));
+    }
+  }
+
+  async deleteCourse(id: number): Promise<void> {
+    try {
+      await api.delete(`${API.COMMON_COURSES}/${id}`);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to delete course."));
+    }
+  }
+
+  async deleteQualification(id: number): Promise<void> {
+    try {
+      await api.delete(`${API.COMMON_QUALIFICATION}/${id}`);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to delete qualification."));
+    }
   }
 
   async getDirectoryCourses(signal?: AbortSignal): Promise<CourseOption[]> {

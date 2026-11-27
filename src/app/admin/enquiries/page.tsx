@@ -2,7 +2,7 @@
 
 import Select from "@/components/ui/Select";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import BackLink from "@/components/common/BackLink";
 import {
   AiOutlineClockCircle,
@@ -15,6 +15,9 @@ import {
   AiOutlineUser,
 } from "react-icons/ai";
 import enquiryService, { EnquiryRecord } from "@/services/enquiry.service";
+import staffService, { StaffRecord } from "@/services/staff.service";
+import { getRole, subscribeToRoleChanges } from "@/utils/auth";
+import { notifySuccess } from "@/lib/notifications";
 
 const NAVY = "#15213D";
 const ORANGE = "#E8621A";
@@ -39,6 +42,14 @@ export default function AdminEnquiriesPage() {
     field: "name" | "mentor.name" | "assigned_to.name";
     query: string;
   } | null>(null);
+  const role = useSyncExternalStore(subscribeToRoleChanges, getRole, () => null);
+  const [staff, setStaff] = useState<StaffRecord[]>([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffError, setStaffError] = useState<string | null>(null);
+  const [assignmentStaffIds, setAssignmentStaffIds] = useState<Record<string, string>>({});
+  const [assignmentReasons, setAssignmentReasons] = useState<Record<string, string>>({});
+  const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({});
+  const [assigningId, setAssigningId] = useState<string | null>(null);
 
   const sortedEnquiries = useMemo(
     () =>
@@ -85,8 +96,60 @@ export default function AdminEnquiriesPage() {
     };
   }, [activeSearch, page, refreshKey, sortOrder]);
 
+  useEffect(() => {
+    if (role !== "admin") return;
+    let cancelled = false;
+
+    async function loadStaff() {
+      setStaffLoading(true);
+      setStaffError(null);
+      try {
+        const activeStaff = await staffService.getActive();
+        if (!cancelled) setStaff(activeStaff);
+      } catch (loadError) {
+        if (!cancelled) {
+          setStaffError(loadError instanceof Error ? loadError.message : "Unable to load staff.");
+        }
+      } finally {
+        if (!cancelled) setStaffLoading(false);
+      }
+    }
+
+    void loadStaff();
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
+
   function changePage(nextPage: number) {
     setPage(nextPage);
+  }
+
+  async function assignEnquiry(enquiry: EnquiryRecord) {
+    const key = String(enquiry.id);
+    const staffId = assignmentStaffIds[key];
+    if (!staffId) {
+      setAssignmentErrors((current) => ({
+        ...current,
+        [key]: "Select an active staff member.",
+      }));
+      return;
+    }
+
+    setAssigningId(key);
+    setAssignmentErrors((current) => ({ ...current, [key]: "" }));
+    try {
+      await enquiryService.assign(enquiry.id, staffId, assignmentReasons[key]);
+      notifySuccess("Enquiry assigned successfully.", `enquiry-assigned-${key}`);
+      setRefreshKey((current) => current + 1);
+    } catch (assignError) {
+      setAssignmentErrors((current) => ({
+        ...current,
+        [key]: assignError instanceof Error ? assignError.message : "Unable to assign this enquiry.",
+      }));
+    } finally {
+      setAssigningId(null);
+    }
   }
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
@@ -263,6 +326,104 @@ export default function AdminEnquiriesPage() {
                       {formatCreatedAt(enquiry.created_t ?? enquiry.created_at)}
                     </p>
                   </div>
+                  {role === "admin" && (
+                    <div className="mt-4 rounded-xl border border-gray-100 bg-white p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Assignment
+                          </p>
+                          <p className="mt-1 text-sm text-gray-700">
+                            {enquiry.assigned_to?.name
+                              ? `Assigned to ${enquiry.assigned_to.name}`
+                              : "Not assigned to staff"}
+                          </p>
+                        </div>
+                        {staffLoading && (
+                          <span className="text-xs text-gray-500">Loading staff...</span>
+                        )}
+                      </div>
+
+                      {staffError ? (
+                        <p role="alert" className="mt-3 text-sm text-red-600">
+                          {staffError}
+                        </p>
+                      ) : (
+                        <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(180px,240px)_minmax(200px,1fr)_auto] lg:items-end">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Assign to
+                            <Select
+                              aria-label={`Assign enquiry ${enquiry.id} to staff`}
+                              value={assignmentStaffIds[String(enquiry.id)] ?? ""}
+                              onValueChange={(value) =>
+                                setAssignmentStaffIds((current) => ({
+                                  ...current,
+                                  [String(enquiry.id)]: value,
+                                }))
+                              }
+                              options={[
+                                { value: "", label: "Select staff" },
+                                ...staff
+                                  .filter((member) => member.id !== undefined)
+                                  .map((member) => {
+                                    const name = [member.first_name, member.last_name]
+                                      .filter(Boolean)
+                                      .join(" ");
+                                    return {
+                                      value: String(member.id),
+                                      label: name ? `${name} (${member.email})` : member.email,
+                                    };
+                                  }),
+                              ]}
+                              disabled={staffLoading || assigningId === String(enquiry.id)}
+                              className="mt-1.5 w-full"
+                            />
+                          </label>
+                          <label className="text-xs font-semibold text-gray-600">
+                            Assignment reason
+                            <input
+                              type="text"
+                              value={assignmentReasons[String(enquiry.id)] ?? ""}
+                              onChange={(event) =>
+                                setAssignmentReasons((current) => ({
+                                  ...current,
+                                  [String(enquiry.id)]: event.target.value,
+                                }))
+                              }
+                              disabled={assigningId === String(enquiry.id)}
+                              placeholder="Optional note"
+                              className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-normal outline-none placeholder:text-gray-400 focus:border-orange-300 disabled:cursor-not-allowed disabled:opacity-60"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => void assignEnquiry(enquiry)}
+                            disabled={
+                              staffLoading ||
+                              staff.length === 0 ||
+                              assigningId === String(enquiry.id)
+                            }
+                            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                            style={{ background: ORANGE }}
+                          >
+                            {assigningId === String(enquiry.id) && (
+                              <AiOutlineReload className="h-4 w-4 animate-spin" />
+                            )}
+                            {assigningId === String(enquiry.id)
+                              ? "Assigning..."
+                              : enquiry.assigned_to
+                                ? "Reassign"
+                                : "Assign"}
+                          </button>
+                        </div>
+                      )}
+                      {assignmentErrors[String(enquiry.id)] && (
+                        <p role="alert" className="mt-3 text-sm text-red-600">
+                          {assignmentErrors[String(enquiry.id)]}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-4 rounded-xl bg-gray-50 px-4 py-3">
                     <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                       <AiOutlineUser />

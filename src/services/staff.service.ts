@@ -16,6 +16,7 @@ export interface StaffRecord {
   phone: string;
   first_name: string;
   last_name: string;
+  is_active?: boolean;
 }
 
 export interface StaffPage {
@@ -67,10 +68,20 @@ function requestError(error: unknown, fallback: string): Error {
 }
 
 class StaffService {
-  async getAll(page = 1, perPage = 10, signal?: AbortSignal): Promise<StaffPage> {
+  async getActive(): Promise<StaffRecord[]> {
+    const result = await this.getAll(1, 200, undefined, "is_active:eq:true");
+    return result.staff.filter((staff) => staff.is_active !== false);
+  }
+
+  async getAll(
+    page = 1,
+    perPage = 10,
+    signal?: AbortSignal,
+    filter?: string,
+  ): Promise<StaffPage> {
     try {
       const response = await api.get<unknown>(API.ALL_STAFF, {
-        params: { page, per_page: perPage },
+        params: { page, per_page: perPage, ...(filter ? { filter } : {}) },
         signal,
       });
       const body = response.data;
@@ -105,6 +116,7 @@ class StaffService {
               : "",
           first_name: typeof record.first_name === "string" ? record.first_name : "",
           last_name: typeof record.last_name === "string" ? record.last_name : "",
+          is_active: typeof record.is_active === "boolean" ? record.is_active : undefined,
         };
       });
       return { staff, moreRecords: envelope?.info?.more_records === true || !!envelope?.next };

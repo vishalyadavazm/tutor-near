@@ -108,6 +108,17 @@ class EnquiryService {
       throw new Error(extractErrorMessage(error, "Unable to send your enquiry."));
     }
   }
+
+  async assign(enquiryId: number | string, staffId: number | string, reason?: string): Promise<void> {
+    try {
+      await api.patch(`${API.ENQUIRY}/${enquiryId}`, {
+        assigned_to: typeof staffId === "string" ? Number(staffId) : staffId,
+        ...(reason?.trim() ? { assign_reason: reason.trim() } : {}),
+      });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to assign this enquiry."));
+    }
+  }
 }
 
 const enquiryService = new EnquiryService();
