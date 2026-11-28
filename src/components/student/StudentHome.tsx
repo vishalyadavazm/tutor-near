@@ -10,7 +10,6 @@ import BackLink from "@/components/common/BackLink";
 import {
   AiOutlineSearch,
   AiOutlineEnvironment,
-  AiOutlineBell,
   AiOutlineClose,
   AiOutlineFilter,
   AiOutlineMessage,
@@ -864,13 +863,9 @@ export default function StudentHome({
 
           {/* Right */}
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="hidden h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 lg:flex"
-            >
-              <AiOutlineBell className="w-4.5 h-4.5" />
-            </button>
+            <Link href="/student/enquiries" aria-label="My enquiries" title="My enquiries" className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50">
+              <AiOutlineMessage className="h-4.5 w-4.5" />
+            </Link>
             <Link
               href="/profile"
               className="flex min-w-0 items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2 transition-colors hover:border-orange-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A] focus-visible:ring-offset-2"

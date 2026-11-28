@@ -25,4 +25,6 @@ export const API = {
   COMMON_DOCUMENT_NAME: "/common/documentname",
   COMMON_COURSES: "/common/courses",
   ENQUIRY: "/enquiry/enquirys",
+  ENQUIRY_STATUS: "/enquiry/enquiry_status",
+  ENQUIRY_HISTORY: "/enquiry/enquiry_history",
 };

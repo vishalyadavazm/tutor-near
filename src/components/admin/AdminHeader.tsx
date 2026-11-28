@@ -11,6 +11,7 @@ const sections: Record<string, string> = {
   "/admin/staff": "Staff management",
   "/admin/teachers": "Teacher verification",
   "/admin/enquiries": "Enquiry management",
+  "/admin/enquiry-statuses": "Enquiry statuses",
   "/admin/courses": "Courses management",
   "/admin/qualifications": "Qualifications management",
   "/admin/profile": "My profile",
@@ -30,7 +31,7 @@ export default function AdminHeader() {
           </span>
         </Link>
         <span className="hidden rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 lg:inline">
-          {sections[pathname] || "Administration"}
+            {sections[pathname] || (pathname.startsWith("/admin/enquiries/") ? "Enquiry details" : "Administration")}
         </span>
         <nav aria-label="Account" className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
           <Link

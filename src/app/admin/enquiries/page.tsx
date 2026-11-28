@@ -2,7 +2,9 @@
 
 import Select from "@/components/ui/Select";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import EnquiryStatusBadge from "@/components/admin/EnquiryStatusBadge";
 import BackLink from "@/components/common/BackLink";
 import {
   AiOutlineClockCircle,
@@ -14,7 +16,7 @@ import {
   AiOutlineSearch,
   AiOutlineUser,
 } from "react-icons/ai";
-import enquiryService, { EnquiryRecord } from "@/services/enquiry.service";
+import enquiryService, { EnquiryRecord, EnquiryStatus } from "@/services/enquiry.service";
 import staffService, { StaffRecord } from "@/services/staff.service";
 import { getRole, subscribeToRoleChanges } from "@/utils/auth";
 import { notifySuccess } from "@/lib/notifications";
@@ -50,51 +52,57 @@ export default function AdminEnquiriesPage() {
   const [assignmentReasons, setAssignmentReasons] = useState<Record<string, string>>({});
   const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({});
   const [assigningId, setAssigningId] = useState<string | null>(null);
-
-  const sortedEnquiries = useMemo(
-    () =>
-      [...enquiries].sort((first, second) => {
-        const firstDate = Date.parse(first.created_t ?? first.created_at ?? "");
-        const secondDate = Date.parse(second.created_t ?? second.created_at ?? "");
-        const dateDifference = secondDate - firstDate;
-        const order = Number.isFinite(dateDifference) && dateDifference !== 0
-          ? dateDifference
-          : String(second.id).localeCompare(String(first.id), undefined, { numeric: true });
-        return sortOrder === "recent" ? order : -order;
-      }),
-    [enquiries, sortOrder],
-  );
+  const [statuses, setStatuses] = useState<EnquiryStatus[]>([]);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [statusError, setStatusError] = useState("");
+  const [searchError, setSearchError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    async function loadStatuses() {
+      setStatusError("");
+      try {
+        const result = await enquiryService.getActiveStatuses(controller.signal);
+        if (!controller.signal.aborted) setStatuses(result);
+      } catch (error) {
+        if (!controller.signal.aborted) setStatusError(error instanceof Error ? error.message : "Unable to load statuses.");
+      }
+    }
+    void loadStatuses();
+    return () => controller.abort();
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
 
     async function loadEnquiries() {
       setLoading(true);
       setError(null);
       try {
-        const sort = sortOrder === "recent" ? "-created_t" : "created_t";
-        const filter = activeSearch
-          ? `${activeSearch.field}:contains:${activeSearch.query}`
-          : undefined;
-        const result = await enquiryService.getAll(page, 10, sort, filter);
-        if (cancelled) return;
+        const sort = sortOrder === "recent" ? "-created_t,id" : "created_t,id";
+        const filter = [
+          activeSearch ? `${activeSearch.field}:contains:${activeSearch.query}` : "",
+          statusFilter ? `status:eq:${statusFilter}` : "",
+        ].filter(Boolean).join(",") || undefined;
+        const result = await enquiryService.getAll(page, 10, sort, filter, controller.signal);
+        if (controller.signal.aborted) return;
         setEnquiries(result.enquiries);
         setPage(result.page);
         setMoreRecords(result.moreRecords);
       } catch (loadError) {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setError(loadError instanceof Error ? loadError.message : "Unable to load enquiries.");
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     void loadEnquiries();
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [activeSearch, page, refreshKey, sortOrder]);
+  }, [activeSearch, page, refreshKey, sortOrder, statusFilter]);
 
   useEffect(() => {
     if (role !== "admin") return;
@@ -119,7 +127,7 @@ export default function AdminEnquiriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [role]);
+  }, [role, refreshKey]);
 
   function changePage(nextPage: number) {
     setPage(nextPage);
@@ -155,12 +163,15 @@ export default function AdminEnquiriesPage() {
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = searchInput.trim();
+    if (/[:,]/.test(query)) { setSearchError("Search for one value without commas or colons."); return; }
+    setSearchError("");
     setPage(1);
     setActiveSearch(query ? { field: searchField, query } : null);
   }
 
   function clearSearch() {
     setSearchInput("");
+    setSearchError("");
     setActiveSearch(null);
     setPage(1);
   }
@@ -184,12 +195,14 @@ export default function AdminEnquiriesPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <Link href="/admin/enquiries/new" className="rounded-lg bg-brand-orange px-4 py-2.5 text-sm font-semibold text-white">New enquiry</Link>
+            <Link href="/admin/enquiry-statuses" className="text-sm font-semibold text-brand-orange hover:underline">Manage statuses</Link>
             <label className="flex items-center gap-2 text-sm text-gray-600">
               Sort by:
               <Select
                 aria-label="Sort enquiries"
                 value={sortOrder}
-                onValueChange={(value) => setSortOrder(value as "recent" | "oldest")}
+                onValueChange={(value) => { setSortOrder(value as "recent" | "oldest"); setPage(1); }}
                 options={[{ value: "recent", label: "Most Recent" }, { value: "oldest", label: "Oldest" }]}
               />
             </label>
@@ -206,6 +219,11 @@ export default function AdminEnquiriesPage() {
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 px-5 pt-4">
+            <Select aria-label="Filter enquiries by status" value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(1); }} options={[{ value: "", label: "All statuses" }, ...statuses.map((status) => ({ value: status.id, label: status.name }))]} className="max-w-xs" />
+            {statusError && <p role="alert" className="mt-2 text-sm text-red-600">{statusError} Use Refresh to retry.</p>}
+            {searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError}</p>}
+          </div>
           <form
             onSubmit={submitSearch}
             className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row"
@@ -268,7 +286,7 @@ export default function AdminEnquiriesPage() {
               </div>
             </div>
             <span className="text-sm text-gray-500">
-              {loading ? "Loading…" : `${sortedEnquiries.length} on this page`}
+              {loading ? "Loading…" : `${enquiries.length} on this page`}
             </span>
           </div>
 
@@ -298,12 +316,13 @@ export default function AdminEnquiriesPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {sortedEnquiries.map((enquiry) => (
+              {enquiries.map((enquiry) => (
                 <article key={enquiry.id} className="px-5 py-5 transition-colors hover:bg-gray-50/70">
                   <div className="flex flex-col justify-between gap-4 sm:flex-row">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-semibold text-gray-900">{enquiry.name}</h3>
+                        <EnquiryStatusBadge status={enquiry.status} />
                         <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium capitalize text-blue-700">
                           {enquiry.enquirer_type}
                         </span>
@@ -433,6 +452,7 @@ export default function AdminEnquiriesPage() {
                       {enquiry.message}
                     </p>
                   </div>
+                  <Link href={`/admin/enquiries/${enquiry.id}`} className="mt-4 inline-block text-sm font-semibold text-brand-orange hover:underline">Manage enquiry &amp; history →</Link>
                 </article>
               ))}
             </div>

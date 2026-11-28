@@ -40,7 +40,7 @@ function AdminDashboardPage() {
             </div>
             <h2 className="mt-5 text-lg font-semibold" style={{ color: NAVY }}>Enquiries</h2>
             <p className="mt-2 text-sm leading-relaxed text-gray-500">
-              View enquiries and contact details submitted through the website.
+              Assign enquiries, update statuses, and manage remarks and follow-ups.
             </p>
           </Link>
           <Link
@@ -90,6 +90,11 @@ function AdminDashboardPage() {
             </p>
           </div>
           <AdminTeacherVerificationLink />
+          <Link href="/admin/enquiry-statuses" className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md">
+            <div className="flex items-start justify-between"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><AiOutlineCheckCircle className="h-6 w-6" /></span><AiOutlineRight className="mt-1 text-gray-400" /></div>
+            <h2 className="mt-5 text-lg font-semibold text-brand-navy">Enquiry Statuses</h2>
+            <p className="mt-2 text-sm text-gray-500">Manage the statuses available in your enquiry workflow.</p>
+          </Link>
         </div>
       </div>
     </main>

@@ -58,6 +58,7 @@ export default function ContactModal({ teacher, onClose }: Props) {
   const [subject, setSubject]     = useState(teacher.courses[0] ?? "");
   const [grade, setGrade]         = useState("");
   const [message, setMessage]     = useState("");
+  const [enquirerType, setEnquirerType] = useState<"student" | "parent">(() => getRole() === "parent" ? "parent" : "student");
   const [errors, setErrors]       = useState<Record<string, string>>({});
 
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -155,9 +156,10 @@ export default function ContactModal({ teacher, onClose }: Props) {
       await enquiryService.create({
         name: name.trim(),
         phone: phone.replace(/\s/g, ""),
-        subject,
-        grade,
-        enquirer_type: "student",
+        email: email.trim(),
+        subject_of_interest: subject,
+        class_of_interest: grade,
+        enquirer_type: enquirerType,
         message: enquiryMessage,
         mentor: teacher.id,
       });
@@ -243,6 +245,15 @@ export default function ContactModal({ teacher, onClose }: Props) {
           <form onSubmit={handleSubmit} className="overflow-y-auto" style={{ maxHeight: "calc(90vh - 168px)" }}>
             <div className="px-6 py-5 flex flex-col gap-4">
 
+              <Field label="Enquiring as" required>
+                <Select
+                  aria-label="Enquiring as"
+                  value={enquirerType}
+                  onValueChange={(value) => setEnquirerType(value as "student" | "parent")}
+                  options={[{ value: "student", label: "Student" }, { value: "parent", label: "Parent" }]}
+                />
+              </Field>
+
               {/* Name */}
               <Field
                 label="Your Name"
@@ -297,7 +308,7 @@ export default function ContactModal({ teacher, onClose }: Props) {
                     aria-label="Subject"
                     value={subject}
                     onValueChange={setSubject}
-                    options={SUBJECTS.map((subject) => ({ value: subject, label: subject }))}
+                    options={Array.from(new Set([...teacher.courses, ...SUBJECTS])).map((subject) => ({ value: subject, label: subject }))}
                     required
                   />
                 </Field>
@@ -340,7 +351,7 @@ export default function ContactModal({ teacher, onClose }: Props) {
                 </p>
               )}
               <p className="text-[11px] text-gray-400 -mt-1">
-                Your contact details are shared only with {teacher.name}. TutorNear will not share them with third parties.
+                TutorNear&apos;s team will use these details to follow up on your enquiry about {teacher.name}.
               </p>
             </div>
 

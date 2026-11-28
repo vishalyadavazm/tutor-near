@@ -68,9 +68,13 @@ function requestError(error: unknown, fallback: string): Error {
 }
 
 class StaffService {
-  async getActive(): Promise<StaffRecord[]> {
-    const result = await this.getAll(1, 200, undefined, "is_active:eq:true");
-    return result.staff.filter((staff) => staff.is_active !== false);
+  async getActive(signal?: AbortSignal): Promise<StaffRecord[]> {
+    const staff: StaffRecord[] = [];
+    for (let page = 1; ; page += 1) {
+      const result = await this.getAll(page, 200, signal, "is_active:eq:true");
+      staff.push(...result.staff.filter((member) => member.is_active !== false));
+      if (!result.moreRecords || result.staff.length === 0) return staff;
+    }
   }
 
   async getAll(
