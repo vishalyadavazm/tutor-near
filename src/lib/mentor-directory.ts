@@ -6,7 +6,9 @@ export const MENTOR_SEARCH_FIELDS = [
 ] as const;
 
 export type MentorSearchField = typeof MENTOR_SEARCH_FIELDS[number]["value"];
-export type MentorSort = "relevant" | "rating" | "exp" | "name";
+export type MentorSort = "relevant" | "popular" | "exp" | "name";
+
+export const POPULAR_MENTOR_SORT = "-total_likes,id";
 
 export const MENTOR_EXPERIENCE_BUCKETS = [
   { label: "0–2 years", min: 0, max: 2 },
@@ -34,7 +36,7 @@ export interface MentorDirectoryParams {
 
 const SORT_FIELDS: Record<MentorSort, string> = {
   relevant: "id",
-  rating: "-total_rating,id",
+  popular: POPULAR_MENTOR_SORT,
   exp: "-total_expierence_in_years,id",
   name: "first_name,last_name,id",
 };

@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import TeacherProfile from "@/components/teacher/TeacherProfile";
 import StudentProfile from "@/components/student/StudentProfile";
-import { getRole } from "@/utils/auth";
+import { getRole, subscribeToRoleChanges } from "@/utils/auth";
 
 export default function ProfilePage() {
-  const [role, setRole] = useState<string | null>(null);
+  const role = useSyncExternalStore(subscribeToRoleChanges, getRole, () => null);
 
-  useEffect(() => {
-    setRole(getRole());
-  }, []);
-
+  if (role === null) {
+    return <main className="flex min-h-screen items-center justify-center bg-gray-50 text-sm text-gray-500">Loading profile…</main>;
+  }
   if (role === "student") return <StudentProfile />;
   return <TeacherProfile />;
 }

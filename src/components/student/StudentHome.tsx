@@ -37,7 +37,7 @@ import {
   type MentorSearchField,
   type MentorSort,
 } from "@/lib/mentor-directory";
-import studentService, { StudentPost, StudentProfileRecord } from "@/services/student.service";
+import studentService, { StudentPost, StudentProfileRecord, StudentProfileBasicUser } from "@/services/student.service";
 import {
   DisplayTeacher,
   formatExperience,
@@ -490,6 +490,7 @@ export default function StudentHome({
   const mobileFiltersRef = useRef<HTMLDivElement>(null);
   const [contactTeacher, setContactTeacher] = useState<DisplayTeacher | null>(null);
   const [myProfile, setMyProfile] = useState<StudentProfileRecord | null>(null);
+  const [basicUser, setBasicUser] = useState<StudentProfileBasicUser | null>(null);
   const [myProfileLoading, setMyProfileLoading] = useState(true);
   const [profileImageFailed, setProfileImageFailed] = useState(false);
   const isTeacher = useSyncExternalStore(
@@ -543,10 +544,16 @@ export default function StudentHome({
 
     (async () => {
       try {
-        const myProfiles = await studentService.getProfiles();
-        if (!cancelled) setMyProfile(myProfiles[0] ?? null);
+        const account = await studentService.getMyProfile();
+        if (!cancelled) {
+          setMyProfile(account.profile);
+          setBasicUser(account.basicUser);
+        }
       } catch {
-        if (!cancelled) setMyProfile(null);
+        if (!cancelled) {
+          setMyProfile(null);
+          setBasicUser(null);
+        }
       } finally {
         if (!cancelled) setMyProfileLoading(false);
       }
@@ -732,10 +739,11 @@ export default function StudentHome({
   );
 
   const studentCompletionPct = computeStudentCompletion(myProfile);
+  const studentUser = myProfile?.user ?? basicUser;
   const studentName =
-    [myProfile?.user?.first_name, myProfile?.user?.last_name].filter(Boolean).join(" ") ||
-    myProfile?.user?.name ||
-    myProfile?.user?.email ||
+    [studentUser?.first_name, studentUser?.last_name].filter(Boolean).join(" ").trim() ||
+    (studentUser && "name" in studentUser ? studentUser.name : "") ||
+    studentUser?.email ||
     "Student";
   const studentInitials = getInitials(studentName);
   const profileBanner =
@@ -976,7 +984,7 @@ export default function StudentHome({
                   onValueChange={(value) => setSortBy(value as MentorSort)}
                   options={[
                     { value: "relevant", label: "Default order" },
-                    { value: "rating", label: "Highest Rated" },
+                    { value: "popular", label: "Most Saved" },
                     { value: "exp", label: "Most Experienced" },
                     { value: "name", label: "Name (A–Z)" },
                   ]}

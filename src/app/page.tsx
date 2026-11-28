@@ -26,6 +26,7 @@ import {
   FaGraduationCap,
 } from "react-icons/fa";
 import mentorService from "@/services/mentor.service";
+import { POPULAR_MENTOR_SORT } from "@/lib/mentor-directory";
 import studentService, { type StudentPost } from "@/services/student.service";
 import JobPostSlider from "@/components/student/JobPostSlider";
 import { DisplayTeacher, formatExperience, toDisplayTeacherFromDirectory } from "@/utils/teacherDisplay";
@@ -212,7 +213,7 @@ export default function HomeGuestPage() {
       setTeachersLoading(true);
       setTeachersError(false);
       try {
-        const directory = await mentorService.getAllProfiles({ page: 1, perPage: 8, sort: "-total_rating,id" });
+        const directory = await mentorService.getAllProfiles({ page: 1, perPage: 8, sort: POPULAR_MENTOR_SORT });
         const loadedTeachers = directory
           .map(toDisplayTeacherFromDirectory)
           .filter((teacher): teacher is DisplayTeacher => teacher !== null);
@@ -397,12 +398,12 @@ export default function HomeGuestPage() {
         </div>
       </section>
 
-      {/* ── Top Rated Tutors (full grid) ── */}
+      {/* ── Popular Tutors (full grid) ── */}
       <section className="px-5 py-10 sm:px-6 sm:py-12" style={{ background: "#F7F8FD" }}>
         <div className="max-w-[1400px] mx-auto">
           <div className="flex items-end justify-between mb-6 flex-wrap gap-2">
             <div className="animate-fade-in-up">
-              <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Top Rated Tutors</h2>
+              <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Popular Tutors</h2>
               <p className="text-sm text-gray-500 mt-1">Learn from the best verified teachers in the field</p>
             </div>
             <Link href="/student" className="text-sm font-semibold hover:underline animate-fade-in-up" style={{ color: ORANGE, animationDelay: "100ms" }}>

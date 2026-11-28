@@ -157,9 +157,9 @@ export default function StudentProfile() {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState("");
-  const [firstName, setFirstName] = useState("Student");
+  const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("student@example.com");
+  const [email, setEmail] = useState("");
 
   /* Existing profile fetched from the API, if the student already created one */
   const [existingProfile, setExistingProfile] = useState<StudentProfileRecord | null>(null);
@@ -196,8 +196,11 @@ export default function StudentProfile() {
 
         const { profile: existing, basicUser } = myProfileRes;
         setExistingProfile(existing);
+        const user = existing?.user ?? basicUser;
+        setFirstName(user?.first_name ?? "");
+        setLastName(user?.last_name ?? "");
+        setEmail(user?.email ?? "");
         if (existing) {
-          if (existing.user?.name) setEmail(existing.user.name);
           setGender(existing.gender || "");
           setDob(existing.date_of_birth || "");
           setAbout(existing.about || "");
@@ -209,10 +212,6 @@ export default function StudentProfile() {
           setCountry(existing.country || "India");
           setStandardId(existing.standard?.id);
           if (existing.profile_pic) setPhotoUrl(existing.profile_pic);
-        } else if (basicUser) {
-          if (basicUser.first_name) setFirstName(basicUser.first_name);
-          if (basicUser.last_name) setLastName(basicUser.last_name);
-          if (basicUser.email) setEmail(basicUser.email);
         }
       } catch {
         if (!cancelled) setOptionsError("Couldn't load form options. Please refresh the page.");
