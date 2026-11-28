@@ -43,6 +43,7 @@ export interface MentorProfileBasicUser {
 
 export interface MentorProfileRecord {
   id: number;
+  is_verified: boolean;
   created_t: string;
   modified_t: string;
   profile_pic: string | null;
@@ -75,6 +76,7 @@ export interface MentorAllQualification {
 
 export interface MentorAllProfile {
   id: number;
+  is_verified: boolean;
   created_t: string;
   modified_t: string;
   profile_pic: string | null;
@@ -266,6 +268,26 @@ class MentorService {
       signal,
     });
     return { profiles: res.data.data, moreRecords: res.data.info.more_records };
+  }
+
+  async setVerification(mentorId: number, isVerified: boolean): Promise<void> {
+    try {
+      // Verification takes the user id from /mentor/all, not profile.id.
+      await api.patch(`${API.MENTOR_VERIFY}/${mentorId}`, { is_verified: isVerified });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, "Unable to update teacher verification."));
+    }
+  }
+
+  async downloadIdentityDocument(mentorId: number): Promise<Blob> {
+    try {
+      const response = await api.get<Blob>(`${API.MENTOR_DOCUMENT}/${mentorId}`, {
+        responseType: "blob",
+      });
+      return response.data;
+    } catch {
+      throw new Error("Unable to download the identity document. Please try again.");
+    }
   }
 
   async getProfiles(): Promise<MentorProfileRecord[]> {

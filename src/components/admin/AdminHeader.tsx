@@ -9,6 +9,7 @@ import { useAdminAccount } from "@/components/admin/useAdminAccount";
 const sections: Record<string, string> = {
   "/admin/dashboard": "Administration",
   "/admin/staff": "Staff management",
+  "/admin/teachers": "Teacher verification",
   "/admin/enquiries": "Enquiry management",
   "/admin/courses": "Courses management",
   "/admin/qualifications": "Qualifications management",

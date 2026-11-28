@@ -13,6 +13,8 @@ export const API = {
   VERIFY_EMAIL_OTP: "/auth/verifyemailotp/",
   MENTOR_PROFILE: "/mentor/profile",
   MENTOR_ALL_PROFILES: "/mentor/all",
+  MENTOR_VERIFY: "/mentor/verify",
+  MENTOR_DOCUMENT: "/mentor/document",
   MENTOR_LIKE: "/mentor/likes",
   MENTOR_RATING: "/mentor/rating",
   MENTOR_COMMENTS: "/comment/comments/",

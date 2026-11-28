@@ -1078,8 +1078,8 @@ export default function TeacherProfile() {
               <div className="flex flex-col gap-2.5">
                 {[
                   "A clear bio with your teaching philosophy increases trust by 2×",
-                  "Add your highest qualification to get a verified badge",
-                  "Upload an ID proof so students know you're verified",
+                  "Add your highest qualification for admin review",
+                  "Upload an ID proof to help admins verify your profile",
                 ].map((tip, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span

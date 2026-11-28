@@ -120,7 +120,7 @@ export default function TeacherDashboard() {
     myProfile?.user?.email ||
     "Teacher";
   const displayInitials = myProfile ? getInitials(displayName) : "T";
-  const isVerified = !!myProfile?.identity_verification_name;
+  const isVerified = myProfile?.is_verified === true;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
